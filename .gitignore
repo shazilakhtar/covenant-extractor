@@ -1,0 +1,7 @@
+# Never upload secrets or local junk
+.streamlit/secrets.toml
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
