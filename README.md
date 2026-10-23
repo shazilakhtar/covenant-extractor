@@ -8,7 +8,7 @@ Members: Adwoa Atuahene, Norbesida Bagabila, Shazil Akhtar
 
 ### 0. Logistics
 - Attending the Oct 23 workshop: Yes
-- Project board: https://github.com/users/shazilakhtar/projects/1
+- Project board: https://github.com/shazilakhtar/covenant-extractor
 - Streamlit app: https://covenant-extractor-bnqohatptcbnnfrwywhiyo.streamlit.app/
 
 ### 1. The project, as it stands today
