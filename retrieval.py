@@ -89,6 +89,32 @@ def embed_chunks(chunks, cache_path):
     return vectors
 
 
+def retrieve(question, chunks, vectors, k=6):
+    """Return the k chunks most similar to the question, best first.
+    Each returned chunk is a copy of the original with a "score" added."""
+    # 1. Embed the question, using Google's recommended format for questions.
+    query = f"task: question answering | query: {question}"
+    q = np.array(embed_texts([query])[0], dtype=np.float32)
+
+    # 2. Cosine similarity between the question and EVERY chunk at once:
+    #    (chunk . question) / (length of chunk * length of question)
+    scores = (vectors @ q) / (np.linalg.norm(vectors, axis=1) * np.linalg.norm(q))
+
+    # 3. Sort chunk positions from highest score to lowest, keep the top k.
+    best = np.argsort(scores)[::-1][:k]
+
+    # 4. Return copies of those chunks with their score attached.
+    return [{**chunks[i], "score": float(scores[i])} for i in best]
+
+
+def rank_of(results, match):
+    """Position (1 = best) of the first result where match(chunk) is True, or None."""
+    for position, chunk in enumerate(results, start=1):
+        if match(chunk):
+            return position
+    return None
+
+
 if __name__ == "__main__":
     # Test: load Hasbro the same way chunking.py does, then embed (or load from cache).
     from edgar import html_to_text
@@ -97,7 +123,25 @@ if __name__ == "__main__":
     path = "samples/hasbro_2026_revolver.htm"
     text = html_to_text(open(path, encoding="utf-8").read())
     chunks = chunk_agreement(text)
-    print("Chunks:", len(chunks))
-
     vectors = embed_chunks(chunks, "samples/hasbro_2026_revolver.embeddings.npy")
-    print("Vectors shape:", vectors.shape)   # expect (407, 768): 407 chunks x 768 numbers
+
+    # What counts as the "right answer" for each test question.
+    is_705 = lambda c: c["section"] == "7.05"
+    is_ebitda_def = lambda c: c["title"] == 'Definition: "Consolidated EBITDA"'
+
+    tests = [
+        ("What are the financial covenants?", is_705, "Section 7.05", 6),
+        ("What is the maximum leverage ratio?", is_705, "Section 7.05", 6),
+        ("How is Consolidated EBITDA defined?", is_ebitda_def, "EBITDA definition", 3),
+    ]
+
+    for question, target, target_name, needed in tests:
+        # Rank ALL chunks so we know exactly where the right one landed.
+        ranked = retrieve(question, chunks, vectors, k=len(chunks))
+        rank = rank_of(ranked, target)
+
+        print(f"\nQ: {question}")
+        for position, c in enumerate(ranked[:6], start=1):
+            print(f"  {position}. [{c['score']:.3f}] {c['section']} | {c['title'][:60]}")
+        verdict = "PASS" if rank is not None and rank <= needed else "FAIL"
+        print(f"  -> {target_name} is #{rank} (needs top {needed}): {verdict}")
