@@ -13,9 +13,13 @@ from google.genai import errors, types
 
 from definitions import lookup_definition
 from prompts import EXTRACT_PROMPT, EXTRACT_PROMPT_VERSION
+import streamlit as st
+
 from retrieval import client, retrieve
 
-GEN_MODEL = "gemini-3.8-flash"   # free-tier model; if Google renames it, change it here
+# The model can be switched in Streamlit Secrets (GEMINI_MODEL = "...") without a code change,
+# e.g. to a model with a bigger free daily limit.
+GEN_MODEL = st.secrets.get("GEMINI_MODEL", "gemini-3.8-flash")
 MAX_TOOL_ROUNDS = 5               # stop the model looping on the tool forever
 MAX_CHUNKS = 10                   # how many retrieved chunks go into the prompt
 
@@ -45,6 +49,11 @@ LOOKUP_TOOL = types.Tool(function_declarations=[types.FunctionDeclaration(
 RETRY_WAITS = [10, 20, 40]        # seconds to wait after a "busy" (503) or "too fast" (429) error
 
 
+def is_daily_limit(error):
+    """True when Google says the free tier's requests-per-DAY limit is used up."""
+    return "PerDay" in str(error) or "per day" in str(error).lower()
+
+
 def call_gemini(contents, config):
     """Call Gemini. If Google says it is busy (503) or we are too fast (429),
     wait and try again, up to 3 more times. Any other error is raised right away."""
@@ -53,6 +62,8 @@ def call_gemini(contents, config):
             return client.models.generate_content(
                 model=GEN_MODEL, contents=contents, config=config)
         except errors.APIError as e:
+            if is_daily_limit(e):
+                raise    # waiting seconds will not help: the daily quota resets at midnight PT
             if e.code in (429, 503) and wait is not None:
                 print(f"  Gemini busy ({e.code}), retrying in {wait} seconds...")
                 time.sleep(wait)
@@ -192,5 +203,7 @@ if __name__ == "__main__":
                   f'| first test {c.get("first_test_date")} | quote found: {c["quote_found"]}')
             if c.get("schedule"):
                 print("    schedule:", c["schedule"])
+            if not c["quote_found"]:
+                print("    QUOTE NOT FOUND IN TEXT:", repr(c.get("supporting_quote")))
         print("\nExpected (hand-coded): 7.05(b) leverage max 3.75 at 2026-03-31; "
               "7.05(a) interest coverage min 3.00")
