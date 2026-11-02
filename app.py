@@ -113,7 +113,12 @@ with tab_main:
                  f"[open on EDGAR]({f['url']})")
 
         # --- Shazil: show the model's result, or a clear message when it failed ---
-        if result["status"] == "api_error":
+        if result["status"] == "api_error" and "per day" in result.get("error", "").lower():
+            st.error("The app has used its free daily allowance of model requests. "
+                     "It resets at midnight Pacific time. Please try again tomorrow.")
+            with st.expander("Technical details"):
+                st.code(result.get("error", ""))
+        elif result["status"] == "api_error":
             st.error("The language model could not be reached (it may be busy). "
                      "Please try again in a minute.")
             with st.expander("Technical details"):
