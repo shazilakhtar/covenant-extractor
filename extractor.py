@@ -169,17 +169,13 @@ def extract_covenants(chunks, vectors, definitions):
     return result
 
 
-# Quick test: "py extractor.py" — runs on Hasbro (cached embeddings, about 6 Gemini calls).
+# Quick test: "py extractor.py" — runs on Hasbro (saved copy, no embedding needed).
 if __name__ == "__main__":
-    from edgar import html_to_text
-    from chunking import chunk_agreement
-    from definitions import build_definitions
-    from retrieval import embed_chunks
+    from pipeline import load_document, SAMPLES
 
-    text = html_to_text(open("samples/hasbro_2026_revolver.htm", encoding="utf-8").read())
-    chunks = chunk_agreement(text)
-    vectors = embed_chunks(chunks, "samples/hasbro_2026_revolver.embeddings.npy")
-    out = extract_covenants(chunks, vectors, build_definitions(chunks))
+    url = next(iter(SAMPLES))
+    chunks, ops_chunks, vectors, definitions = load_document(url)
+    out = extract_covenants(ops_chunks, vectors, definitions)
 
     print("Status:", out["status"], "| prompt:", out["prompt_version"], "| model:", out["model"])
     print("Retrieved:", [s for s, _, _ in out.get("retrieved", [])])
