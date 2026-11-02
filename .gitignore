@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Embeddings cached at runtime (rebuilt when needed)
+samples/cache/
