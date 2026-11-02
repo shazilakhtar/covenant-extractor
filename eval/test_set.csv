@@ -1,0 +1,3 @@
+id,company,ticker,agreement_url,case_type,expected_found,expected_covenant_name,expected_kind,expected_level,expected_first_test_date,expected_section,expected_condition,coded_by,coded_date,notes
+1,Hasbro Inc.,HAS,https://www.sec.gov/Archives/edgar/data/46080/000095015726000171/ex10-1.htm,seasonal table,Y,Consolidated Net Total Leverage Ratio,maximum,3.75,2026-03-31,7.05(b),,Shazil,2026-10-22,4.00x for Sep 30 quarter; 4.25x after large acquisition
+2,Apple Inc.,AAPL,,no agreement on EDGAR,N/A,,,,,,,Shazil,2026-11-01,out of scope: app should say no agreement found
