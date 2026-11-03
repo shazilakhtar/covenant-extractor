@@ -1,0 +1,23 @@
+id,company,ticker,agreement_url,case_type,expected_found,expected_covenant_name,expected_kind,expected_level,expected_first_test_date,expected_section,expected_condition,coded_by,coded_date,notes,second_coder
+1,Hasbro Inc.,HAS,https://www.sec.gov/Archives/edgar/data/46080/000095015726000171/ex10-1.htm,seasonal table,Y,Consolidated Net Total Leverage Ratio,maximum,3.75,2026-03-31,7.05(b),,Shazil,2026-10-22,4.00x for Sep 30 quarter; 4.25x after large acquisition,
+2,Apple Inc.,AAPL,,no agreement on EDGAR,N/A,,,,,,,Shazil,2026-11-01,out of scope: app should say no agreement found,
+3,(fake ticker),ZZZZ,,bad input,,,,,,,,,,,
+4,Mattel Inc.,MAT,https://www.sec.gov/Archives/edgar/data/63276/000162828024031973/mattel-creditagreement2024.htm,normal leverage,,,,,,,,,,,Adwoa
+5,GAN Ltd,GAN,https://www.sec.gov/Archives/edgar/data/1799332/000149315223012845/ex10-1.htm,normal leverage,,,,,,,,,,,
+6,AvePoint Inc.,AVPT,https://www.sec.gov/Archives/edgar/data/1777921/000143774923030336/ex_591109.htm,normal leverage,,,,,,,,,,,Norbesida
+7,United Homes Group Inc.,UHG,https://www.sec.gov/Archives/edgar/data/1830188/000183018825000012/ex-1023xcreditagreement.htm,normal leverage,,,,,,,,,,,
+8,Commercial Vehicle Group Inc.,CVGI,https://www.sec.gov/Archives/edgar/data/1290900/000162828026016520/exhibit1036q42025.htm,normal leverage,,,,,,,,,,,Norbesida
+9,Lulu's Fashion Lounge Holdings,LVLU,https://www.sec.gov/Archives/edgar/data/1780201/000155837024010190/tmb-20240722xex10d1.htm,normal leverage,,,,,,,,,,,
+10,Excelerate Energy Inc.,EE,https://www.sec.gov/Archives/edgar/data/1888447/000095017025067156/ee-ex10_3.htm,normal leverage,,,,,,,,,,,
+11,Casella Waste Systems,CWST,https://www.sec.gov/Archives/edgar/data/911177/000119312523181016/d524927dex101.htm,net leverage,,,,,,,,,,,Adwoa
+12,AMN Healthcare Services,AMN,https://www.sec.gov/Archives/edgar/data/1142750/000095014225002687/eh250686864_ex1001.htm,net leverage,,,,,,,,,,,
+13,Tronox Holdings plc,TROX,https://www.sec.gov/Archives/edgar/data/1530804/000114036124049849/ef20040331_ex10-1.htm,first lien leverage,,,,,,,,,,,
+14,Superior Group of Companies,SGC,https://www.sec.gov/Archives/edgar/data/95574/000143774923013023/ex_512273.htm,step-downs,,,,,,,,,,,Adwoa
+15,Limoneira Co,LMNR,https://www.sec.gov/Archives/edgar/data/1342423/000110465925121572/tm2533597d1_ex10-1.htm,step-downs,,,,,,,,,,,
+16,Montauk Renewables,MNTK,https://www.sec.gov/Archives/edgar/data/1826600/000119312526006546/d19493dex10147.htm,step-downs,,,,,,,,,,,
+17,Vivid Seats Inc.,SEAT,https://www.sec.gov/Archives/edgar/data/1856031/000119312526331507/seat-ex10_2.htm,springing? (verify),,,,,,,,,,,
+18,J.Jill Inc.,JILL,https://www.sec.gov/Archives/edgar/data/1687932/000095014223001005/eh230346263_ex1001.htm,springing? (verify),,,,,,,,,,,
+19,OneWater Marine Inc.,ONEW,https://www.sec.gov/Archives/edgar/data/1772921/000177292124000046/onew-2024630xexx101.htm,fixed charge coverage,,,,,,,,,,,Norbesida
+20,AMMO Inc.,POWW,https://www.sec.gov/Archives/edgar/data/1015383/000164117225005369/ex10-1.htm,fixed charge coverage,,,,,,,,,,,
+21,Meta Platforms Inc. (2012),META,,no covenant? (verify),,,,,,,,,,,
+22,TBD,,,no covenant,,,,,,,,,,,
