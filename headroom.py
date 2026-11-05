@@ -1,3 +1,8 @@
+# headroom.py
+# Author: Norbesida | Task: headroom calculator for the IS883 Covenant Extractor
+# Code written with help from Claude (Anthropic, Claude Sonnet 5.5). Disclosed per directives §9.
+
+
 def calculate_headroom(covenant_kind, limit, numerator, denominator):
     """
     covenant_kind: "maximum" (e.g. leverage) or "minimum" (e.g. interest coverage)
@@ -54,9 +59,58 @@ def calculate_headroom(covenant_kind, limit, numerator, denominator):
     }
 
 
+def headroom_from_ratio(covenant_kind, limit, actual_ratio):
+    """
+    Compare a ratio the company REPORTED (e.g. "leverage was 2.4x") with the covenant limit.
+    covenant_kind: "maximum" (leverage) or "minimum" (coverage)
+    limit:         the covenant level, e.g. 3.75
+    actual_ratio:  the ratio reported in the filing, e.g. 2.4
+    Returns {"actual_ratio", "limit", "in_compliance", "headroom_pct"},
+    or {"error": "..."} if the input is bad.
+    """
+
+    # --- Step A: check the inputs ---
+    if covenant_kind not in ("maximum", "minimum"):
+        return {"error": 'covenant_kind must be "maximum" or "minimum".'}
+
+    for name, value in [("limit", limit), ("actual_ratio", actual_ratio)]:
+        if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+            return {"error": f"{name} is missing or is not a number."}
+
+    if limit <= 0:
+        return {"error": "The covenant limit must be greater than 0."}
+    if actual_ratio < 0:
+        return {"error": "The reported ratio cannot be negative."}
+
+    # --- Step B: headroom, which depends on the covenant kind ---
+    if covenant_kind == "maximum":
+        # Safe while actual is BELOW (or equal to) the limit
+        in_compliance = actual_ratio <= limit
+        headroom = (limit - actual_ratio) / limit
+    else:
+        # Safe while actual is ABOVE (or equal to) the limit
+        in_compliance = actual_ratio >= limit
+        headroom = (actual_ratio - limit) / limit
+
+    return {
+        "actual_ratio": actual_ratio,
+        "limit": limit,
+        "in_compliance": in_compliance,
+        "headroom_pct": round(headroom * 100, 1),
+    }
+
+
 # --- Tests: compare each printed result with the hand calculations ---
+# Run with: py headroom.py
 if __name__ == "__main__":
     print("(a) expect 3.0x, 20%, 20%:   ", calculate_headroom("maximum", 3.75, 750, 250))
     print("(b) expect 4.2x, -12%, -12%: ", calculate_headroom("maximum", 3.75, 1050, 250))
     print("(c) expect 5.0x, 66.7%, 40%: ", calculate_headroom("minimum", 3.00, 500, 100))
     print("(d) expect an error message: ", calculate_headroom("maximum", 3.75, 750, 0))
+
+    print()
+    print("Tests for headroom_from_ratio:")
+    print("(a) expect compliance, 36.0%: ", headroom_from_ratio("maximum", 3.75, 2.4))
+    print("(b) expect breach, -12.0%:    ", headroom_from_ratio("maximum", 3.75, 4.2))
+    print("(c) expect compliance, 66.7%: ", headroom_from_ratio("minimum", 3.00, 5.0))
+    print("(d) expect an error message:  ", headroom_from_ratio("maximum", 3.75, None))
