@@ -15,7 +15,9 @@ from definitions import lookup_definition
 from prompts import EXTRACT_PROMPT, EXTRACT_PROMPT_VERSION
 import streamlit as st
 
-from retrieval import client, retrieve
+import numpy as np
+
+from retrieval import client, embed_texts
 
 # The model can be switched in Streamlit Secrets (GEMINI_MODEL = "...") without a code change,
 # e.g. to a model with a bigger free daily limit.
@@ -71,12 +73,30 @@ def call_gemini(contents, config):
                 raise
 
 
+_question_vectors = {}   # the 4 questions never change: embed them once per session
+
+
+def question_vector(q):
+    """Embedding of one retrieval question, computed once and reused (saves free-tier quota)."""
+    if q not in _question_vectors:
+        _question_vectors[q] = np.array(
+            embed_texts([f"task: question answering | query: {q}"])[0], dtype=np.float32)
+    return _question_vectors[q]
+
+
+def top_k(qv, chunks, vectors, k=6):
+    """Same cosine-similarity ranking as retrieval.retrieve, with a precomputed question vector."""
+    scores = (vectors @ qv) / (np.linalg.norm(vectors, axis=1) * np.linalg.norm(qv))
+    best = np.argsort(scores)[::-1][:k]
+    return [{**chunks[i], "score": float(scores[i])} for i in best]
+
+
 def gather_chunks(chunks, vectors):
     """Run each retrieval question, merge the results, keep the best MAX_CHUNKS.
     The cover page is always included, so the model can see the effective date."""
     best = {}
     for q in RETRIEVAL_QUESTIONS:
-        for c in retrieve(q, chunks, vectors, k=6):
+        for c in top_k(question_vector(q), chunks, vectors, k=6):
             key = (c["section"], c["title"])
             if key not in best or c["score"] > best[key]["score"]:
                 best[key] = c
