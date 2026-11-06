@@ -17,15 +17,19 @@ from retrieval import embed_texts, retrieve                     # my retrieval c
 from prompts import DISCLOSED_RATIO_PROMPT_V1                   # my versioned prompt
 
 FILINGS_DIR = "samples/filings"   # saved copies of filings, so repeat runs skip the SEC
-TOP_K = 5                         # how many paragraphs we send to Gemini
+TOP_K = 5                         # how many excerpts we send to Gemini
 
-# Words that signal a paragraph is about covenant compliance.
+# Words that signal a passage is about covenant compliance.
 # DESIGN CHOICE: this free keyword filter runs BEFORE embeddings. A 10-Q has thousands
-# of paragraphs; embedding all of them would use most of the free-tier quota for one
-# company. Keeping only paragraphs with these words leaves a few dozen, costs nothing,
-# and the paragraph we want almost always contains at least one of them.
+# of lines; embedding all of them would use most of the free-tier quota for one
+# company. Keeping only passages with these words leaves a few dozen, costs nothing,
+# and the passage we want almost always contains at least one of them.
 KEYWORDS = ["covenant", "leverage ratio", "coverage ratio", "in compliance"]
-MAX_PARAGRAPHS = 40               # safety cap on how many paragraphs we embed
+MAX_PARAGRAPHS = 40               # safety cap on how many excerpts we embed
+# Companies often give the actual ratio in a TABLE right after a sentence like
+# "we were in compliance ... as follows:". Table rows are short lines, so for every
+# keyword line we also keep the lines right after it, so the table comes along.
+WINDOW_LINES = 12
 
 # Gemini settings: the same key and model as the rest of the app, from secrets.toml.
 GEN_MODEL = st.secrets.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
@@ -91,29 +95,34 @@ def load_filing_text(cik, filing):
 
 
 # ---------- Step 3: cheap keyword filter ----------
+def looks_like_code(line):
+    """True for the hidden XBRL code lines in a filing: they contain web addresses
+    or giant strings with no spaces. Real sentences and table rows don't."""
+    return "http" in line or any(len(token) > 40 for token in line.split())
+
+
 def keyword_paragraphs(text):
-    """Keep only paragraphs that mention a covenant keyword (see KEYWORDS above)."""
+    """For every line that mentions a keyword, keep that line PLUS the next
+    WINDOW_LINES lines as one excerpt, so a table that follows comes along."""
+    lines = [l.strip() for l in text.splitlines() if l.strip() and not looks_like_code(l)]
     kept = []
-    for line in text.splitlines():
-        paragraph = line.strip()
-        lower = paragraph.lower()
-        hits = sum(1 for word in KEYWORDS if word in lower)    # how many keywords it mentions
-        # Real sentences only: at least 8 words. This skips tiny fragments AND the hidden
-        # XBRL code lines (long strings with almost no spaces). Also skip duplicates.
-        if hits > 0 and len(paragraph.split()) >= 8 and paragraph not in kept:
-            kept.append(paragraph)
+    for i, line in enumerate(lines):
+        if any(word in line.lower() for word in KEYWORDS):
+            excerpt = " ".join(lines[i:i + WINDOW_LINES])     # the line + what follows it
+            if len(excerpt.split()) >= 8 and excerpt not in kept:
+                kept.append(excerpt)
 
     # If there are too many, keep the ones mentioning the most keywords.
     kept.sort(key=lambda p: sum(1 for word in KEYWORDS if word in p.lower()), reverse=True)
     return kept[:MAX_PARAGRAPHS]
 
 
-# ---------- Step 4: rank the kept paragraphs with embeddings ----------
+# ---------- Step 4: rank the excerpts with embeddings ----------
 def top_paragraphs(paragraphs, covenant_name, k=TOP_K):
-    """Embed the paragraphs and the question, and reuse retrieve() to pick the top k."""
-    # Shape each paragraph like a chunk, so my retrieve() function can rank it.
+    """Embed the excerpts and the question, and reuse retrieve() to pick the top k."""
+    # Shape each excerpt like a chunk, so my retrieve() function can rank it.
     chunks = [{"section": "", "title": "", "text": p} for p in paragraphs]
-    # Same document format as in retrieval.py (these paragraphs have no title).
+    # Same document format as in retrieval.py (these excerpts have no title).
     vectors = np.array(embed_texts([f"title: none | text: {p}" for p in paragraphs]), dtype=np.float32)
     question = f"What was the company's {covenant_name} as of the end of the quarter?"
     return retrieve(question, chunks, vectors, k=k)
@@ -173,7 +182,7 @@ def find_disclosed_ratio(cik, covenant_name):
             result["status"] = "not_disclosed"   # no covenant language at all
             return result
 
-        # Step 4: top paragraphs by embeddings
+        # Step 4: top excerpts by embeddings
         best = top_paragraphs(paragraphs, covenant_name)
         excerpts = "\n\n".join(p["text"] for p in best)
 
@@ -202,7 +211,7 @@ def find_disclosed_ratio(cik, covenant_name):
         result["value"] = float(value)
         result["as_of"] = answer.get("as_of")
         result["quote"] = quote
-        # Our own check: does the quote really appear in the paragraphs we sent?
+        # Our own check: does the quote really appear in the excerpts we sent?
         result["quote_found"] = bool(quote) and tidy(quote) in tidy(excerpts)
         return result
 
@@ -213,7 +222,7 @@ def find_disclosed_ratio(cik, covenant_name):
 
 if __name__ == "__main__":
     # Test ONE company at a time. Default: Hasbro.
-    # Another company:  python3 disclosed_ratio.py 63276 "Covenant Name Here"
+    # Another company:  python3 disclosed_ratio.py 911177 "Consolidated Net Leverage Ratio"
     cik = int(sys.argv[1]) if len(sys.argv) > 1 else 46080
     covenant = sys.argv[2] if len(sys.argv) > 2 else "Consolidated Net Total Leverage Ratio"
 
