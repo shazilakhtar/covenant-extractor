@@ -24,6 +24,11 @@ SAMPLES = {
         ("samples/hasbro_2026_revolver.htm", "samples/hasbro_2026_revolver.embeddings.npy"),
 }
 
+# Keyword filter before embedding. The free tier embeds about 1,000 chunks a day, and an
+# agreement has about 150 operative sections; this keeps only sections that can matter for
+# financial covenants (Hasbro: 159 -> 59, Section 7.05 kept), so ~17 agreements fit in a day.
+KEYWORDS = re.compile(r"ratio|covenant|EBITDA|leverage|coverage|in compliance|financial", re.I)
+
 # Filing descriptions that mean "a change to an agreement", not the full agreement itself.
 NOT_FULL = re.compile(r"\b(AMENDMENT (TO|NO)|INCREASE|JOINDER|WAIVER|SUPPLEMENT|CONSENT)\b", re.I)
 
@@ -48,17 +53,30 @@ def doc_id(url):
     return "_".join(parts[-3:]).replace(".htm", "").replace(".", "-")
 
 
-def load_document(url):
+def keep_for_retrieval(chunk):
+    """Operative sections that mention covenant words (plus the cover page, for the date)."""
+    if is_definition(chunk):
+        return False
+    return chunk["section"] == "front" or bool(KEYWORDS.search(chunk["title"] + " " + chunk["text"]))
+
+
+def load_document(url, cache_dir=CACHE_DIR):
     """Download (or load the saved copy), chunk, build the definitions dictionary,
     and embed the operative sections (cached on disk after the first time)."""
     sample = SAMPLES.get(url)
+    os.makedirs(cache_dir, exist_ok=True)
+    html_path = os.path.join(cache_dir, doc_id(url) + ".htm")
     if sample:
         html = open(sample[0], encoding="utf-8").read()
+    elif os.path.exists(html_path):            # downloaded before: no new SEC request
+        html = open(html_path, encoding="utf-8").read()
     else:
         html = fetch_document_html(url)
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html)
     chunks = chunk_agreement(html_to_text(html))
     definitions = build_definitions(chunks)
-    ops_idx = [i for i, c in enumerate(chunks) if not is_definition(c)]
+    ops_idx = [i for i, c in enumerate(chunks) if keep_for_retrieval(c)]
     ops_chunks = [chunks[i] for i in ops_idx]
 
     if sample and os.path.exists(sample[1]):
@@ -66,6 +84,5 @@ def load_document(url):
         if len(full) == len(chunks):            # saved vectors for every chunk: keep ours
             return chunks, ops_chunks, full[ops_idx], definitions
 
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    vectors = embed_chunks(ops_chunks, os.path.join(CACHE_DIR, doc_id(url) + ".npy"))
+    vectors = embed_chunks(ops_chunks, os.path.join(cache_dir, doc_id(url) + ".kw.npy"))
     return chunks, ops_chunks, vectors, definitions

@@ -126,9 +126,12 @@ def check_covenants(data, picked):
     return data
 
 
-def extract_covenants(chunks, vectors, definitions):
-    """Main function. Returns a dict with "status": "ok", "parse_error" or "api_error"."""
-    result = {"prompt_version": EXTRACT_PROMPT_VERSION, "model": GEN_MODEL,
+def extract_covenants(chunks, vectors, definitions, prompt=None, prompt_version=None):
+    """Main function. Returns a dict with "status": "ok", "parse_error" or "api_error".
+    prompt / prompt_version let the eval script compare prompt versions; the app uses the default."""
+    prompt = prompt or EXTRACT_PROMPT
+    prompt_version = prompt_version or EXTRACT_PROMPT_VERSION
+    result = {"prompt_version": prompt_version, "model": GEN_MODEL, "requests": 0,
               "tool_calls": [], "tokens_in": 0, "tokens_out": 0}
     try:
         picked = gather_chunks(chunks, vectors)
@@ -137,7 +140,7 @@ def extract_covenants(chunks, vectors, definitions):
         contents = [types.Content(role="user",
                                   parts=[types.Part.from_text(text=build_message(picked))])]
         config = types.GenerateContentConfig(
-            system_instruction=EXTRACT_PROMPT,
+            system_instruction=prompt,
             tools=[LOOKUP_TOOL],
             temperature=0,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -145,6 +148,7 @@ def extract_covenants(chunks, vectors, definitions):
 
         for _ in range(MAX_TOOL_ROUNDS + 1):
             response = call_gemini(contents, config)
+            result["requests"] += 1
             usage = response.usage_metadata
             result["tokens_in"] += usage.prompt_token_count or 0
             result["tokens_out"] += usage.candidates_token_count or 0
