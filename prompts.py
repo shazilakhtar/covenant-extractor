@@ -116,3 +116,26 @@ Answer with ONLY a JSON object, no other text, in exactly this shape:
 # The version the app uses. Change both lines together.
 EXTRACT_PROMPT = EXTRACT_PROMPT_V2
 EXTRACT_PROMPT_VERSION = "extract-v2"
+
+
+# --- Adwoa: disclosed-ratio-v1 — find the covenant ratio a company REPORTS in its 10-Q/10-K ---
+# Written with help from Claude (Anthropic), per course rule §9.
+DISCLOSED_RATIO_PROMPT_V1 = """You read excerpts from a company's 10-Q or 10-K filing.
+Task: find the ACTUAL value of the company's {covenant_name} (or the closest-named
+covenant ratio) that the company itself reports, and the date it is measured at.
+
+Rules:
+- Use ONLY the excerpts below. Do not use outside knowledge.
+- Only report a value the filing states as the company's ACTUAL result, for example
+  "our Consolidated Net Leverage Ratio was 2.4 to 1.00". A covenant LIMIT (the maximum
+  or minimum allowed, e.g. "may not exceed 3.75 to 1.00") is NOT an actual value.
+- Never compute or estimate a ratio yourself.
+- "quote" must be copied word for word from the excerpts: the shortest sentence that states the value.
+- If no actual value is stated, return "value": null and "quote": null.
+
+Return only JSON, nothing else:
+{{"ratio_name": string or null, "value": number or null, "as_of": "YYYY-MM-DD" or null, "quote": string or null}}
+
+Excerpts:
+{excerpts}
+"""
