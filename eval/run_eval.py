@@ -4,6 +4,7 @@
 # Usage (from the repo folder):
 #   py eval/run_eval.py --prompt v2              score prompt v2 on every coded row, 2 runs each
 #   py eval/run_eval.py --prompt v1              same with prompt v1 (the before/after)
+#   py eval/run_eval.py --prompt v3              prompt v3 (few-shot example; amendments)
 #   py eval/run_eval.py --prompt v2 --only 4,5   just rows 4 and 5 (to test the script cheaply)
 #   py eval/run_eval.py --prepare                download + embed the agreements only (no Gemini
 #                                                extraction), so later runs cost only Gemini calls
@@ -61,7 +62,8 @@ def score_row(row, result):
     """Compare one app result with the expected answer. Returns a dict of yes/no checks."""
     expected = row["expected_found"].strip().upper()
     out = {"status": result["status"], "pred_level": "", "pred_section": "", "pred_name": "",
-           "level_ok": "", "section_ok": "", "quote_found": "", "correct": False, "note": ""}
+           "level_ok": "", "section_ok": "", "quote_found": "", "correct": False, "note": "",
+           "all_predicted": ""}
 
     if expected == "N/A":                              # out of scope: no company / no agreement
         out["correct"] = result["status"] in ("no_company", "no_agreement")
@@ -71,6 +73,9 @@ def score_row(row, result):
         return out
 
     covenants = result["data"].get("covenants") or []
+    # every covenant the app returned, so a miss can be explained later
+    out["all_predicted"] = "; ".join(f'{c.get("name")} = {c.get("level")} [{c.get("section")}]'
+                                     for c in covenants) or f'none (notes: {result["data"].get("notes")})'
     if expected == "N":                                # no financial covenant expected
         out["correct"] = len(covenants) == 0
         out["note"] = "" if out["correct"] else f"app reported {len(covenants)} covenant(s)"
@@ -113,14 +118,15 @@ def run_app(row, prompt, prompt_version, prepare_only=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--prompt", choices=["v1", "v2"], default="v2")
+    ap.add_argument("--prompt", choices=["v1", "v2", "v3"], default="v2")
     ap.add_argument("--runs", type=int, default=2, help="runs per agreement (consistency check)")
     ap.add_argument("--only", default="", help="comma-separated row ids, e.g. 4,5")
     ap.add_argument("--prepare", action="store_true", help="download + embed only")
     args = ap.parse_args()
 
     import prompts
-    prompt = prompts.EXTRACT_PROMPT_V1 if args.prompt == "v1" else prompts.EXTRACT_PROMPT_V2
+    prompt = {"v1": prompts.EXTRACT_PROMPT_V1, "v2": prompts.EXTRACT_PROMPT_V2,
+              "v3": prompts.EXTRACT_PROMPT_V3}[args.prompt]
     version = "extract-" + args.prompt
 
     rows = list(csv.DictReader(open(TEST_SET, encoding="utf-8")))
