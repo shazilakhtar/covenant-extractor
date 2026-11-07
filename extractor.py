@@ -108,7 +108,9 @@ def gather_chunks(chunks, vectors):
     best = {}
     for q in RETRIEVAL_QUESTIONS:
         for c in top_k(question_vector(q), chunks, vectors, k=6):
-            key = (c["section"], c["title"])
+            # the text is part of the key: short amendments have several chunks that are all
+            # labelled "front", and they must not collapse into one
+            key = (c["section"], c["title"], c["text"][:200])
             if key not in best or c["score"] > best[key]["score"]:
                 best[key] = c
     picked = sorted(best.values(), key=lambda c: c["score"], reverse=True)[:MAX_CHUNKS]
