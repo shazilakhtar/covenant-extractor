@@ -22,6 +22,23 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 ### extract-v2 (Nov 1)
 - Why: on Flash Lite, v1 never called the tool, left the first test date empty and paraphrased a quote.
 - Changes: (a) must look up the definition of every ratio it reports; (b) first-test-date rule with two worked examples; (c) quote must be the shortest exact clause containing the level.
+- Results on the 21-row test set (Nov 7, gemini-3.5-flash-lite, 2 runs each):
+
+| | extract-v1 | extract-v2 |
+|---|---|---|
+| Metric (run 1) | 14/21 = 67% | 14/21 = 67% |
+| Same answer on both runs | 90% | 100% |
+| Quotes verified word for word | 81% | 100% |
+| Gemini requests per agreement | 1.0 | 2.1 |
+| Tokens in / out per agreement | 4,494 / 464 | 9,836 / 456 |
+
+- v2 misses: MAT 3.75 (took the first table row; Sep 30 row is 4.00), SGC 4.50 (wrong table row), CVGI 6.50, AMN 4.00 (struck-out redline value), GAN section 1.01(c) (amendment paragraph instead of original section 9.2), MNTK and ONEW no covenant returned (short amendments; definitions not available).
+- Files: `eval/results_extract-v1_20261107_1605.csv`, `eval/results_extract-v2_20261107_1600.csv`.
+
+### extract-v3 (Nov 7)
+- Why: the v2 misses above.
+- Changes: (a) step-by-step table rule: pick the row that covers the first test date, never just the first row; (b) one few-shot worked example, using an invented amendment (not from the test set); (c) amendments: effective date = amendment date, section = the original agreement's section being changed; (d) if `lookup_definition` returns found=false, still report the covenant.
+- Caveat: v3 was written after looking at test-set errors, so its score is not an unbiased estimate.
 - Results: _to be filled after the test set run._
 
 ## disclosed-ratio-v1
