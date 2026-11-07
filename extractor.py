@@ -6,6 +6,7 @@
 #       our code parses and checks the JSON. If anything fails, we return a clear status.
 
 import json
+import os
 import re
 import time
 
@@ -73,15 +74,25 @@ def call_gemini(contents, config):
                 raise
 
 
-_question_vectors = {}   # the 4 questions never change: embed them once per session
+# The 4 retrieval questions never change, so their embeddings are computed ONCE and saved in the
+# repo (samples/question_vectors.json). The app and the eval then never spend embedding quota on them.
+QUESTION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "samples", "question_vectors.json")
+_question_vectors = {}
 
 
 def question_vector(q):
-    """Embedding of one retrieval question, computed once and reused (saves free-tier quota)."""
+    """Embedding of one retrieval question: from the saved file if there, else embedded and saved."""
+    if not _question_vectors and os.path.exists(QUESTION_FILE):
+        with open(QUESTION_FILE, encoding="utf-8") as f:
+            _question_vectors.update(json.load(f))
     if q not in _question_vectors:
-        _question_vectors[q] = np.array(
-            embed_texts([f"task: question answering | query: {q}"])[0], dtype=np.float32)
-    return _question_vectors[q]
+        _question_vectors[q] = embed_texts([f"task: question answering | query: {q}"])[0]
+        try:
+            with open(QUESTION_FILE, "w", encoding="utf-8") as f:
+                json.dump({k: list(map(float, v)) for k, v in _question_vectors.items()}, f)
+        except OSError:
+            pass   # read-only disk (e.g. a deployed app): just keep them in memory
+    return np.array(_question_vectors[q], dtype=np.float32)
 
 
 def top_k(qv, chunks, vectors, k=6):

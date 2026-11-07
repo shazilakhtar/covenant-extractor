@@ -20,7 +20,9 @@ RETRY_WAIT = 60                     # if we still hit the limit, wait a full min
 MAX_TRIES = 5                       # give up after 5 attempts on the same batch
 
 # Connect to Gemini. The key comes from .streamlit/secrets.toml, never from the code.
-client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+# (Shazil) An environment variable, if set, overrides secrets.toml, so a teammate can run a one-off
+# script with their own key: in PowerShell, $env:GEMINI_API_KEY="..." before the command.
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY") or st.secrets["GEMINI_API_KEY"])
 
 
 def embed_texts(texts):

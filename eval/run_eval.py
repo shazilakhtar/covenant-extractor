@@ -143,6 +143,11 @@ def main():
             if args.prepare:
                 print(f'row {row["id"]:>3} {row["ticker"]:<6} {result["status"]} {result.get("error", "")[:80]}')
                 break
+            err = str(result.get("error", "")).lower().replace(" ", "")
+            if "resource_exhausted" in err and "perday" in err:
+                print("\nSTOPPED: the free tier's DAILY limit is used up (it resets at midnight Pacific).")
+                print("Nothing was scored for this row. Re-run later or with a teammate's key.")
+                return
             s = score_row(row, result)
             runs.append(s)
             records.append({"id": row["id"], "ticker": row["ticker"], "case_type": row["case_type"],
