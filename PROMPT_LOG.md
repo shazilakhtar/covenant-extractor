@@ -57,6 +57,21 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 - Files: `eval/results_extract-v3_20261107_1620.csv` (before fix), `eval/results_extract-v3_20261107_1628.csv` (after fix).
 - The app now uses extract-v3.
 
+### Fair comparison: v2 vs v3 on the same (fixed) code (Nov 7)
+
+| | v2 + fix | v3 + fix |
+|---|---|---|
+| Metric (run 1) | 16/21 = 76% | 17/21 = 81% |
+| Both runs together | 32/42 = 76% | 35/42 = 83% |
+| Same answer on both runs | 95% | 95% |
+| Quotes verified word for word | 94% | 100% |
+| Gemini requests per agreement | 1.9 | 1.8 |
+| Tokens in / out per agreement | 11,145 / 482 | 11,563 / 472 |
+
+- So the 67% -> 81% gain splits into: retrieval fix 67% -> 76% (MNTK, ONEW), prompt v3 76% -> 81% (GAN section on both runs, MAT on 1 of 2 runs).
+- Wrong in both: CVGI (answer key under review), AMN (redline), SGC (table row: 4.00 with v2, 4.50 with v3).
+- File: `eval/results_extract-v2_20261107_1650.csv`.
+
 ## disclosed-ratio-v1
 
 **Author:** Adwoa (written with help from Claude, per course rule §9)
