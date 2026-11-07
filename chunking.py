@@ -11,7 +11,9 @@ MIN_CHARS = 200    # shorter pieces are dropped (mostly table-of-contents lines)
 
 # A section heading: optional "Section", a number like 7.11 followed by a dot, then the
 # title and sometimes the start of the section text on the same line.
-HEADING = re.compile(r'^(?:SECTION|Section)?\s*(\d{1,2}\.\d{1,2})\.\s*(.*)$')
+# The dot after the number is optional ("7.05. Financial" and "7.1 Financial" both occur), but the
+# number must be followed by a space or end the line, so "7.05(b)" or "3.75:1.00" never match.
+HEADING = re.compile(r'^(?:SECTION|Section)?\s*(\d{1,2}\.\d{1,2})\.?(?:\s+(.*))?$')
 # A definition starts a line with a quoted term, e.g.  "Consolidated EBITDA" means ...
 DEFINITION = re.compile(r'^[“"]([^”"]{2,80})[”"]')
 
@@ -35,7 +37,7 @@ def is_heading(line):
     m = HEADING.match(line)
     if not m:
         return None
-    rest = m.group(2).strip()
+    rest = (m.group(2) or "").strip()
     title = rest.split(". ")[0][:80]   # title = text up to the first full stop
     # A real heading has no title yet (title on next line) or a capitalised title.
     if title == "" or title[0].isupper() or title[0] == "[":

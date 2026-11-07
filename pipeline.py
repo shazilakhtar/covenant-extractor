@@ -26,8 +26,9 @@ SAMPLES = {
 
 # Keyword filter before embedding. The free tier embeds about 1,000 chunks a day, and an
 # agreement has about 150 operative sections; this keeps only sections that can matter for
-# financial covenants (Hasbro: 159 -> 59, Section 7.05 kept), so ~17 agreements fit in a day.
-KEYWORDS = re.compile(r"ratio|covenant|EBITDA|leverage|coverage|in compliance|financial", re.I)
+# financial covenants. Across our 18 test agreements this means ~920 sections to embed, which fits one
+# day of the free tier, and every covenant section is kept.
+KEYWORDS = re.compile(r"ratio|covenant|EBITDA|leverage|coverage|in compliance", re.I)
 
 # Filing descriptions that mean "a change to an agreement", not the full agreement itself.
 NOT_FULL = re.compile(r"\b(AMENDMENT (TO|NO)|INCREASE|JOINDER|WAIVER|SUPPLEMENT|CONSENT)\b", re.I)
@@ -53,10 +54,15 @@ def doc_id(url):
     return "_".join(parts[-3:]).replace(".htm", "").replace(".", "-")
 
 
+# Covenant wording. A piece labelled as a definition is still kept if it contains this: in short
+# amendments the covenant often sits between quoted terms and gets labelled as a definition.
+COVENANT_WORDS = re.compile(r"shall not permit|shall maintain|shall not be less than|to exceed", re.I)
+
+
 def keep_for_retrieval(chunk):
     """Operative sections that mention covenant words (plus the cover page, for the date)."""
     if is_definition(chunk):
-        return False
+        return bool(COVENANT_WORDS.search(chunk["text"]))
     return chunk["section"] == "front" or bool(KEYWORDS.search(chunk["title"] + " " + chunk["text"]))
 
 
