@@ -39,7 +39,23 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 - Why: the v2 misses above.
 - Changes: (a) step-by-step table rule: pick the row that covers the first test date, never just the first row; (b) one few-shot worked example, using an invented amendment (not from the test set); (c) amendments: effective date = amendment date, section = the original agreement's section being changed; (d) if `lookup_definition` returns found=false, still report the covenant.
 - Caveat: v3 was written after looking at test-set errors, so its score is not an unbiased estimate.
-- Results: _to be filled after the test set run._
+- Results on the 21-row test set (Nov 7, gemini-3.5-flash-lite, 2 runs each):
+
+| | v3 | v3 + retrieval fix (final) |
+|---|---|---|
+| Metric (run 1) | 17/21 = 81% | 17/21 = 81% |
+| Correct on run 2 | 16/21 | 18/21 |
+| Same answer on both runs | 90% | 95% |
+| Quotes verified word for word | 100% | 100% |
+| Gemini requests per agreement | 1.7 | 1.8 |
+| Tokens in / out per agreement | 9,388 / 447 | 11,563 / 472 |
+
+- v3 fixed GAN (section 9.2) and SGC (4.80); MAT right on 1 of 2 runs.
+- Retrieval bug found through the new `all_predicted` column: for MNTK the model wrote that the excerpts had no covenant. Cause: `gather_chunks` merged chunks by (section, title), so all "front" chunks of a short amendment collapsed into one and the covenant text was never sent. Fixed by adding the text to the key. This bug was also present in the v1 and v2 runs.
+- After the fix: MNTK and ONEW correct. SGC went back to 4.50 (it now gets more cover-page text, 18K tokens in, and picks the wrong table row).
+- Remaining misses (final run 1): MAT 3.75 (inconsistent), CVGI 6.50 (answer key under review by the second coder: amendment dated Dec 19 2025, so the first test date by our rule may be Dec 31 2025 = 6.50), AMN (redline: text extraction cannot tell struck numbers from new ones), SGC 4.50.
+- Files: `eval/results_extract-v3_20261107_1620.csv` (before fix), `eval/results_extract-v3_20261107_1628.csv` (after fix).
+- The app now uses extract-v3.
 
 ## disclosed-ratio-v1
 

@@ -212,8 +212,8 @@ Answer with ONLY a JSON object, no other text, in exactly this shape:
 }"""
 
 # The version the app uses. Change both lines together.
-EXTRACT_PROMPT = EXTRACT_PROMPT_V2
-EXTRACT_PROMPT_VERSION = "extract-v2"
+EXTRACT_PROMPT = EXTRACT_PROMPT_V3
+EXTRACT_PROMPT_VERSION = "extract-v3"
 
 
 # --- Adwoa: disclosed-ratio-v1 — find the covenant ratio a company REPORTS in its 10-Q/10-K ---
