@@ -1,6 +1,7 @@
 # --- Shazil: EDGAR tool — find a company's credit agreements and download the text ---
 # Code written with help from Claude (Anthropic, Claude Opus 5.5). Disclosed per directives §9.
 
+import re
 import requests
 from bs4 import BeautifulSoup
 
@@ -47,12 +48,38 @@ def search_credit_agreements(cik, max_results=10):
     return results[:max_results]
 
 
+LINE_BREAK = "@@BR@@"   # a placeholder that never appears in filings
+INLINE_TAGS = ["span", "font", "b", "i", "u", "a", "strong", "em"]
+BLOCK_TAGS = ["p", "div", "br", "tr", "td", "li", "table",
+              "h1", "h2", "h3", "h4", "h5", "h6"]
+
+
+def html_to_text(html):
+    """Turn filing HTML into plain text. Line breaks go only where the page has a real
+    block (paragraph, table row...), so bold or styled words stay inside their sentence."""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    for tag in soup.find_all(INLINE_TAGS):
+        tag.insert_after(" ")          # keep words in separate styled pieces apart
+    for tag in soup.find_all(BLOCK_TAGS):
+        tag.insert_after(LINE_BREAK)   # mark the real line breaks
+    text = soup.get_text()
+    text = " ".join(text.split())      # the HTML file's own line breaks are meaningless
+    lines = [line.strip() for line in text.split(LINE_BREAK)]
+    lines = [re.sub(r"\s+([.,;:)”])", r"\1", line) for line in lines]  # "INC ." -> "INC."
+    lines = [re.sub(r"([“(])\s+", r"\1", line) for line in lines]
+    return "\n".join(line for line in lines if line)
+
+
+def fetch_document_html(url):
+    """Download one filing as raw HTML."""
+    return requests.get(url, headers=HEADERS, timeout=60).text
+
+
 def fetch_document_text(url):
-    """Download one filing and strip the HTML so only plain text is left."""
-    html = requests.get(url, headers=HEADERS, timeout=60).text
-    text = BeautifulSoup(html, "html.parser").get_text(separator="\n")
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    return "\n".join(lines)
+    """Download one filing and return it as plain text."""
+    return html_to_text(fetch_document_html(url))
 
 
 # Quick test: run "py edgar.py TICKER" in the VS Code terminal, e.g. "py edgar.py HAS".

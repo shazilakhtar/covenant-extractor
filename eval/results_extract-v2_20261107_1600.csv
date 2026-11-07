@@ -1,0 +1,43 @@
+id,ticker,case_type,run,expected_level,expected_section,tokens_in,tokens_out,requests,tool_calls,status,pred_level,pred_section,pred_name,level_ok,section_ok,quote_found,correct,note,consistent
+1,HAS,seasonal table,1,3.75,7.05(b),18520,460,3,2,ok,3.75,7.05(b),Consolidated Net Total Leverage Ratio,True,True,True,True,,True
+1,HAS,seasonal table,2,3.75,7.05(b),18520,447,3,2,ok,3.75,7.05(b),Consolidated Net Total Leverage Ratio,True,True,True,True,,True
+2,AAPL,no agreement on EDGAR,1,,,0,0,0,0,no_agreement,,,,,,,True,,True
+2,AAPL,no agreement on EDGAR,2,,,0,0,0,0,no_agreement,,,,,,,True,,True
+3,ZZZZ,bad input,1,,,0,0,0,0,no_company,,,,,,,True,,True
+3,ZZZZ,bad input,2,,,0,0,0,0,no_company,,,,,,,True,,True
+4,MAT,normal leverage,1,4.00,7.05(b),8148,377,2,2,ok,3.75,7.05(b),Consolidated Total Leverage Ratio,False,True,True,False,,True
+4,MAT,normal leverage,2,4.00,7.05(b),8148,385,2,2,ok,3.75,7.05(b),Consolidated Total Leverage Ratio,False,True,True,False,,True
+5,GAN,amendment with redline (hard),1,10000000,9.2,7212,493,2,2,ok,10000000.0,1.01(c),Liquidity,True,False,True,False,,True
+5,GAN,amendment with redline (hard),2,10000000,9.2,7212,493,2,2,ok,10000000.0,1.01(c),Liquidity,True,False,True,False,,True
+6,AVPT,normal leverage,1,2.50,6.7(a),15176,329,3,2,ok,2.5,6.7(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+6,AVPT,normal leverage,2,2.50,6.7(a),15176,418,3,2,ok,2.5,6.7(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+7,UHG,normal leverage,1,2.50,7.1(b),12942,1050,3,5,ok,2.5,7.1(b),Consolidated Total Leverage Ratio,True,True,True,True,,True
+7,UHG,normal leverage,2,2.50,7.1(b),8467,1180,2,5,ok,2.5,7.1(b),Consolidated Total Leverage Ratio,True,True,True,True,,True
+8,CVGI,step-downs,1,7.25,10.3.1,10630,557,2,1,ok,6.5,10.3.1,Consolidated Total Leverage Ratio,False,True,True,False,,True
+8,CVGI,step-downs,2,7.25,10.3.1,10630,630,2,1,ok,6.5,10.3.1,Consolidated Total Leverage Ratio,False,True,True,False,,True
+9,LVLU,amendment with redline,1,2.00,7.16(a),6821,355,1,0,ok,2.0,7.16(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+9,LVLU,amendment with redline,2,2.00,7.16(a),6821,362,1,0,ok,2.0,7.16(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+10,EE,"amendment, conditional levels (hard)",1,3.50,6.10(a),15205,719,2,3,ok,3.5,6.10(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+10,EE,"amendment, conditional levels (hard)",2,3.50,6.10(a),15205,787,2,3,ok,3.5,6.10(a),Consolidated Total Leverage Ratio,True,True,True,True,,True
+11,CWST,"net leverage, amendment with redline, conditional step-up",1,4.00,7.11(b),13542,535,2,2,ok,4.0,7.11(b),Maximum Consolidated Net Leverage Ratio,True,True,True,True,,True
+11,CWST,"net leverage, amendment with redline, conditional step-up",2,4.00,7.11(b),14720,588,2,4,ok,4.0,7.11(b),Maximum Consolidated Net Leverage Ratio,True,True,True,True,,True
+12,AMN,"net leverage, redline with merged old/new numbers (hard)",1,5.25,8.18(a),10079,466,2,2,ok,4.0,8.18(a),Consolidated Net Leverage Ratio,False,True,True,False,,True
+12,AMN,"net leverage, redline with merged old/new numbers (hard)",2,5.25,8.18(a),10079,441,2,2,ok,4.0,8.18(a),Consolidated Net Leverage Ratio,False,True,True,False,,True
+13,TROX,"springing, first lien leverage",1,4.75,6.12(a),13010,260,2,1,ok,4.75,6.12(a),First Lien Net Leverage Ratio,True,True,True,True,,True
+13,TROX,"springing, first lien leverage",2,4.75,6.12(a),13010,255,2,1,ok,4.75,6.12(a),First Lien Net Leverage Ratio,True,True,True,True,,True
+14,SGC,"step-downs, covenant relief period",1,4.80,9.14,5830,395,2,1,ok,4.5,9.14,Consolidated Total Net Leverage Ratio,False,True,True,False,,True
+14,SGC,"step-downs, covenant relief period",2,4.80,9.14,5872,792,2,2,ok,4.5,9.14,Consolidated Total Net Leverage Ratio,False,True,True,False,,True
+15,LMNR,"covenant holiday, non-calendar fiscal year (hard)",1,4.50,8.1.2,5806,674,2,3,ok,4.5,8.1.2,Total Net Leverage Ratio,True,True,True,True,,True
+15,LMNR,"covenant holiday, non-calendar fiscal year (hard)",2,4.50,8.1.2,5806,609,2,3,ok,4.5,8.1.2,Total Net Leverage Ratio,True,True,True,True,,True
+16,MNTK,"step-downs, short amendment",1,3.50,7.9(b),3666,98,2,1,ok,,,,,,,False,expected covenant not found,True
+16,MNTK,"step-downs, short amendment",2,3.50,7.9(b),3666,79,2,1,ok,,,,,,,False,expected covenant not found,True
+17,SEAT,"springing, first lien leverage, step-down",1,4.00,6.11,10928,347,2,1,ok,4.0,6.11,First Lien Net Leverage Ratio,True,True,True,True,,True
+17,SEAT,"springing, first lien leverage, step-down",2,4.00,6.11,10928,412,2,1,ok,4.0,6.11,First Lien Net Leverage Ratio,True,True,True,True,,True
+18,JILL,"first lien leverage, step-downs, 52/53-week retail fiscal year",1,3.00,9.11,9662,490,2,2,ok,3.0,9.11,First Lien Net Leverage Ratio,True,True,True,True,,True
+18,JILL,"first lien leverage, step-downs, 52/53-week retail fiscal year",2,3.00,9.11,14583,490,3,2,ok,3.0,9.11,First Lien Net Leverage Ratio,True,True,True,True,,True
+19,ONEW,amendment to inventory financing (floor plan) agreement; leverage + FCCR,1,3.00,7(e)(i),3676,314,2,1,ok,,,,,,,False,expected covenant not found,True
+19,ONEW,amendment to inventory financing (floor plan) agreement; leverage + FCCR,2,3.00,7(e)(i),3676,314,2,1,ok,,,,,,,False,expected covenant not found,True
+20,POWW,"fixed charge coverage only, monthly test, conditional",1,1.10,6.8(a),9880,269,2,1,ok,1.1,6.8(a),Fixed Charge Coverage Ratio,True,True,True,True,,True
+20,POWW,"fixed charge coverage only, monthly test, conditional",2,1.10,6.8(a),9880,269,2,1,ok,1.1,6.8(a),Fixed Charge Coverage Ratio,True,True,True,True,,True
+21,META,no financial covenant (investment-grade revolver),1,,,5324,90,1,0,ok,,,,,,,True,,True
+21,META,no financial covenant (investment-grade revolver),2,,,5324,95,1,0,ok,,,,,,,True,,True

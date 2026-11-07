@@ -1,0 +1,4 @@
+id,ticker,second_coder,coded_date,sc_covenant_name,sc_kind,sc_first_test_date,sc_level,sc_section,sc_crossed_out,sc_confidence,shazil_level,shazil_section,shazil_first_test_date,level_agree,section_agree,date_agree,notes
+4,MAT,Adwoa,2026-11-07,Consolidated Total Leverage Ratio,maximum,2024-09-30,4.00,7.05(b),No,Medium,4.00,7.05(b),2024-09-30,Y,Y,Y,Both applied the seasonal table: first test is a September quarter (4.00x not 3.75x)
+11,CWST,Adwoa,2026-11-07,Maximum Consolidated Net Leverage Ratio,maximum,2023-06-30,4.00,7.11(b),Yes,Medium,4.00,7.11(b),2023-06-30,Y,Y,Y,Both scored the 4.00x base; both noted the conditional 5.00x step-up if the Specified Acquisition closed and was elected
+14,SGC,Adwoa,2026-11-07,Maximum Consolidated Total Net Leverage Ratio,maximum,2023-06-30,4.80,9.14,No,High,4.80,9.14,2023-06-30,Y,Y,Y,Both placed Jun 30 2023 inside the Covenant Relief Period

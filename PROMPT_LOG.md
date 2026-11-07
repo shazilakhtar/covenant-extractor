@@ -1,0 +1,96 @@
+# Prompt log
+
+Every prompt the app sends to Gemini, when it is sent, and how it changed.
+Prompts live in `prompts.py`. Old versions are never edited, only added to.
+
+## Where prompts are sent
+
+| Stage | When | Prompt | Input | Output |
+|---|---|---|---|---|
+| Call 2: extract covenants | After retrieval, once per agreement | `EXTRACT_PROMPT_V*` (system instruction) | Up to 10 retrieved sections + the cover page | JSON covenant table. The model may call `lookup_definition` in between (each call is one more request) |
+
+Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreement`), not a model call.
+
+## Versions
+
+### extract-v1 (Oct 30)
+- First version. Lists the covenant types, the first-test-date rule, verbatim quotes, and says to call `lookup_definition` "if you need" a defined term.
+- Results on Hasbro:
+  - gemini-3.8-flash: leverage 3.75 and coverage 3.00 correct, sections correct, both quotes verified. With definitions sent through retrieval: 0 tool calls, 3,605 tokens in. With definitions only via the tool: 2 tool calls, first test date filled, 13,940 tokens in.
+  - gemini-3.5-flash-lite: levels and sections correct, but first test date empty, leverage quote not verbatim (caught by the quote check), 0 tool calls, 4,069 tokens in.
+
+### extract-v2 (Nov 1)
+- Why: on Flash Lite, v1 never called the tool, left the first test date empty and paraphrased a quote.
+- Changes: (a) must look up the definition of every ratio it reports; (b) first-test-date rule with two worked examples; (c) quote must be the shortest exact clause containing the level.
+- Results on the 21-row test set (Nov 7, gemini-3.5-flash-lite, 2 runs each):
+
+| | extract-v1 | extract-v2 |
+|---|---|---|
+| Metric (run 1) | 14/21 = 67% | 14/21 = 67% |
+| Same answer on both runs | 90% | 100% |
+| Quotes verified word for word | 81% | 100% |
+| Gemini requests per agreement | 1.0 | 2.1 |
+| Tokens in / out per agreement | 4,494 / 464 | 9,836 / 456 |
+
+- v2 misses: MAT 3.75 (took the first table row; Sep 30 row is 4.00), SGC 4.50 (wrong table row), CVGI 6.50, AMN 4.00 (struck-out redline value), GAN section 1.01(c) (amendment paragraph instead of original section 9.2), MNTK and ONEW no covenant returned (short amendments; definitions not available).
+- Files: `eval/results_extract-v1_20261107_1605.csv`, `eval/results_extract-v2_20261107_1600.csv`.
+
+### extract-v3 (Nov 7)
+- Why: the v2 misses above.
+- Changes: (a) step-by-step table rule: pick the row that covers the first test date, never just the first row; (b) one few-shot worked example, using an invented amendment (not from the test set); (c) amendments: effective date = amendment date, section = the original agreement's section being changed; (d) if `lookup_definition` returns found=false, still report the covenant.
+- Caveat: v3 was written after looking at test-set errors, so its score is not an unbiased estimate.
+- Results on the 21-row test set (Nov 7, gemini-3.5-flash-lite, 2 runs each):
+
+| | v3 | v3 + retrieval fix (final) |
+|---|---|---|
+| Metric (run 1) | 17/21 = 81% | 17/21 = 81% |
+| Correct on run 2 | 16/21 | 18/21 |
+| Same answer on both runs | 90% | 95% |
+| Quotes verified word for word | 100% | 100% |
+| Gemini requests per agreement | 1.7 | 1.8 |
+| Tokens in / out per agreement | 9,388 / 447 | 11,563 / 472 |
+
+- v3 fixed GAN (section 9.2) and SGC (4.80); MAT right on 1 of 2 runs.
+- Retrieval bug found through the new `all_predicted` column: for MNTK the model wrote that the excerpts had no covenant. Cause: `gather_chunks` merged chunks by (section, title), so all "front" chunks of a short amendment collapsed into one and the covenant text was never sent. Fixed by adding the text to the key. This bug was also present in the v1 and v2 runs.
+- After the fix: MNTK and ONEW correct. SGC went back to 4.50 (it now gets more cover-page text, 18K tokens in, and picks the wrong table row).
+- Remaining misses (final run 1): MAT 3.75 (inconsistent), CVGI 6.50 (answer key under review by the second coder: amendment dated Dec 19 2025, so the first test date by our rule may be Dec 31 2025 = 6.50), AMN (redline: text extraction cannot tell struck numbers from new ones), SGC 4.50.
+- Files: `eval/results_extract-v3_20261107_1620.csv` (before fix), `eval/results_extract-v3_20261107_1628.csv` (after fix).
+- The app now uses extract-v3.
+
+### Fair comparison: v2 vs v3 on the same (fixed) code (Nov 7)
+
+| | v2 + fix | v3 + fix |
+|---|---|---|
+| Metric (run 1) | 16/21 = 76% | 17/21 = 81% |
+| Both runs together | 32/42 = 76% | 35/42 = 83% |
+| Same answer on both runs | 95% | 95% |
+| Quotes verified word for word | 94% | 100% |
+| Gemini requests per agreement | 1.9 | 1.8 |
+| Tokens in / out per agreement | 11,145 / 482 | 11,563 / 472 |
+
+- So the 67% -> 81% gain splits into: retrieval fix 67% -> 76% (MNTK, ONEW), prompt v3 76% -> 81% (GAN section on both runs, MAT on 1 of 2 runs).
+- Wrong in both: CVGI (answer key under review), AMN (redline), SGC (table row: 4.00 with v2, 4.50 with v3).
+- File: `eval/results_extract-v2_20261107_1650.csv`.
+
+## disclosed-ratio-v1
+
+**Author:** Adwoa (written with help from Claude, per course rule §9)
+**Prompt:** `DISCLOSED_RATIO_PROMPT_V1` in `prompts.py`, used by `find_disclosed_ratio` in `disclosed_ratio.py`.
+
+**What it does:** Given the top 5 covenant-related excerpts from a company's latest 10-Q/10-K, Gemini returns JSON with `ratio_name`, `value`, `as_of`, `quote`. It may only report a ratio the company states as its ACTUAL result, never a covenant limit; it must never compute a ratio; the quote must be word for word; if no actual value is stated it returns `value: null`. Our code then checks the JSON parses, the value is a number, and the quote really appears in the excerpts (`quote_found`).
+
+**Pipeline before the prompt:** EDGAR submissions API → newest 10-Q/10-K (saved in `samples/filings/`) → free keyword filter ("covenant", "leverage ratio", "coverage ratio", "in compliance") keeping each keyword line plus the next 12 lines → embeddings + `retrieve()` top 5 → Gemini (temperature 0, JSON).
+
+**Results (checked by hand against each filing):**
+
+| Company | CIK | Result | Hand check | Tokens in/out |
+|---|---|---|---|---|
+| Hasbro | 46080 | not_disclosed | "in compliance with all covenants"; only limits (3.75 / 4.00) stated | 2316 / 24 |
+| Mattel | 63276 | not_disclosed (tested as "Consolidated Leverage Ratio" and "Total Leverage Ratio") | "in compliance with all covenants"; only limits (3.75 / 4.00) stated | 4799 / 24 |
+| Casella | 911177 | found: 2.70 as of 2026-06-30, quote_found True | covenant table: 2.70 actual vs 4.00 requirement | 1667 / 60 |
+
+**What we learned:**
+- The first version kept only lines with 8+ words, which dropped Casella's covenant TABLE (short rows), so it wrongly returned not_disclosed. Keeping the 12 lines after each keyword line fixed it.
+- For Hasbro and Mattel the excerpts contained covenant LIMITS (3.75, 4.00); the "a limit is not an actual value" rule stopped Gemini from reporting them.
+- Hidden XBRL code lines matched keywords; we skip lines with web addresses or 40+ character tokens.
+- Note for Shazil: the app picked a 2011 agreement for MAT and found no covenants, but Mattel's current 10-Q describes a Credit Agreement with 2.75 interest coverage and 3.75 / 4.00 leverage covenants.
