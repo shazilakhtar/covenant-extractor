@@ -97,11 +97,12 @@ def level_text(c):
 # --- Shazil: cached steps, so the same ticker or agreement never costs quota twice ---
 @st.cache_data(show_spinner=False, ttl=24 * 3600)
 def cached_filings(ticker):
-    from edgar import find_company, search_credit_agreements
+    from edgar import find_company, list_credit_agreements, add_titles
     company = find_company(ticker)
     if company is None:
         return None, []
-    return company, search_credit_agreements(company["cik"])
+    # last 6 years, several result pages, real titles read from each cover page
+    return company, add_titles(list_credit_agreements(company["cik"]))
 
 
 @st.cache_resource(show_spinner=False)
@@ -205,6 +206,21 @@ with tab_main:
             f'<div class="meta">Filed {filed_on}. '
             f'<a href="{agreement_link}" target="_blank">Open on EDGAR</a></div></div>',
             unsafe_allow_html=True)
+
+        # --- Shazil: every credit agreement and amendment found on EDGAR, newest first ---
+        with st.expander(f"All credit agreements found on EDGAR ({len(filings)})", expanded=True):
+            st.dataframe(pd.DataFrame([{
+                "Filed": x.get("date"),
+                "Title": x.get("description") or x.get("exhibit"),
+                "Type": ("Amendment" if x.get("is_amendment") else
+                         "Unknown" if (x.get("description") or "EX-").upper().startswith("EX-")
+                         else "Full agreement"),
+                "In use": "◀ used" if i == idx else "",
+                "Link": x.get("url"),
+            } for i, x in enumerate(filings)]), hide_index=True, use_container_width=True,
+                column_config={"Link": st.column_config.LinkColumn("Link", display_text="Open")})
+            st.caption("The app reads the newest full agreement. To read another one, "
+                       "use \"Use a different agreement\" at the bottom.")
 
         # --- Shazil: show the model's result, or a clear message when it failed ---
         if result["status"] == "api_error" and "per day" in result.get("error", "").lower():

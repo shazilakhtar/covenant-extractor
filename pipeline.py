@@ -31,7 +31,9 @@ SAMPLES = {
 KEYWORDS = re.compile(r"ratio|covenant|EBITDA|leverage|coverage|in compliance", re.I)
 
 # Filing descriptions that mean "a change to an agreement", not the full agreement itself.
-NOT_FULL = re.compile(r"\b(AMENDMENT (TO|NO)|INCREASE|JOINDER|WAIVER|SUPPLEMENT|CONSENT)\b", re.I)
+NOT_FULL = re.compile(r"\b(AMENDMENT|INCREASE|JOINDER|WAIVER|SUPPLEMENT|CONSENT)\b", re.I)
+
+FULL_TITLE = re.compile(r"CREDIT AGREEMENT|LOAN (AND SECURITY )?AGREEMENT|FINANCING AGREEMENT", re.I)
 
 
 def pick_agreement(filings):
@@ -39,7 +41,7 @@ def pick_agreement(filings):
     (A simple rule for now; the user can pick another one on screen.)"""
     for i, f in enumerate(filings):
         d = f["description"].upper()
-        if "CREDIT AGREEMENT" in d and not NOT_FULL.search(d):
+        if FULL_TITLE.search(d) and not NOT_FULL.search(d):
             return i
     return 0
 
