@@ -1,6 +1,5 @@
-# headroom.py
-# Author: Norbesida | Task: headroom calculator for the IS883 Covenant Extractor
-# Code written with help from Claude (Anthropic, Claude Sonnet 5.5). Disclosed per directives §9.
+# --- Norbesida: headroom calculator (calculate_headroom) ---
+# Code written with help from Claude (Anthropic). Disclosed per directives §9.
 
 
 def calculate_headroom(covenant_kind, limit, numerator, denominator):
