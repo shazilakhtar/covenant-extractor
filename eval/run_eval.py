@@ -21,6 +21,7 @@ import datetime
 import os
 import re
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -142,7 +143,9 @@ def main():
         runs = []
         for k in range(1 if args.prepare else args.runs):
             try:
+                t0 = time.time()
                 result = run_app(row, prompt, version, prepare_only=args.prepare)
+                result["seconds"] = round(time.time() - t0, 1)
             except Exception as e:                       # one bad row must not stop the eval
                 result = {"status": "error", "error": str(e), "tokens_in": 0, "tokens_out": 0,
                           "requests": 0}
@@ -162,7 +165,8 @@ def main():
                             "tokens_in": result.get("tokens_in", 0),
                             "tokens_out": result.get("tokens_out", 0),
                             "requests": result.get("requests", 0),
-                            "tool_calls": len(result.get("tool_calls", []) or []), **s})
+                            "tool_calls": len(result.get("tool_calls", []) or []),
+                            "seconds": result.get("seconds", ""), **s})
             print(f'row {row["id"]:>3} {row["ticker"]:<6} run {k + 1}: '
                   f'{"CORRECT" if s["correct"] else "wrong  "} '
                   f'level {s["pred_level"]!s:<6} section {s["pred_section"]!s:<8} '
@@ -196,6 +200,9 @@ def main():
         print(f"Same answer on both runs: {cons:.0%}")
     print(f"Quotes verified word for word: {quote_rate:.0%}")
     print(f"Per agreement: {avg_req:.1f} Gemini requests, {avg_in:,.0f} tokens in, {avg_out:,.0f} out")
+    secs = sorted(r["seconds"] for r in calls if r.get("seconds") != "")
+    if secs:
+        print(f"Seconds per agreement (model call, agreement already cached): median {secs[len(secs)//2]:.1f}, max {secs[-1]:.1f}")
 
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     path = os.path.join(HERE, f"results_{version}_{stamp}.csv")
