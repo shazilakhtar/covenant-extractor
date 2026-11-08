@@ -53,7 +53,7 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 - v3 fixed GAN (section 9.2) and SGC (4.80); MAT right on 1 of 2 runs.
 - Retrieval bug found through the new `all_predicted` column: for MNTK the model wrote that the excerpts had no covenant. Cause: `gather_chunks` merged chunks by (section, title), so all "front" chunks of a short amendment collapsed into one and the covenant text was never sent. Fixed by adding the text to the key. This bug was also present in the v1 and v2 runs.
 - After the fix: MNTK and ONEW correct. SGC went back to 4.50 (it now gets more cover-page text, 18K tokens in, and picks the wrong table row).
-- Remaining misses (final run 1): MAT 3.75 (inconsistent), CVGI 6.50 (answer key under review by the second coder: amendment dated Dec 19 2025, so the first test date by our rule may be Dec 31 2025 = 6.50), AMN (redline: text extraction cannot tell struck numbers from new ones), SGC 4.50.
+- Remaining misses (final run 1): MAT 3.75 (inconsistent), CVGI 6.50 (the app counts from the amendment date, Dec 19 2025; both human coders counted from the original Jun 27 2025 agreement and got 7.25; the key stays 7.25 and this is reported as a rule ambiguity), AMN (redline: text extraction cannot tell struck numbers from new ones), SGC 4.50.
 - Files: `eval/results_extract-v3_20261107_1620.csv` (before fix), `eval/results_extract-v3_20261107_1628.csv` (after fix).
 - The app now uses extract-v3.
 
@@ -69,7 +69,7 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 | Tokens in / out per agreement | 11,145 / 482 | 11,563 / 472 |
 
 - So the 67% -> 81% gain splits into: retrieval fix 67% -> 76% (MNTK, ONEW), prompt v3 76% -> 81% (GAN section on both runs, MAT on 1 of 2 runs).
-- Wrong in both: CVGI (answer key under review), AMN (redline), SGC (table row: 4.00 with v2, 4.50 with v3).
+- Wrong in both: CVGI (date-rule ambiguity for amendments; two coders agree on 7.25), AMN (redline), SGC (table row: 4.00 with v2, 4.50 with v3).
 - File: `eval/results_extract-v2_20261107_1650.csv`.
 
 ## disclosed-ratio-v1
