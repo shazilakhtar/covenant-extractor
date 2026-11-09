@@ -87,6 +87,22 @@ def tag(text, kind="neutral"):
     return f'<span class="tag tag-{kind}">{html.escape(str(text))}</span>'
 
 
+def test_frequency(c):
+    """How often the covenant is tested, read from the covenant's own quote and schedule
+    (plain code, no model). Order matters: monthly and semi-annual before quarterly."""
+    import re
+    t = " ".join(str(c.get(k) or "") for k in ("supporting_quote", "schedule", "condition", "name")).lower()
+    if re.search(r"fiscal month|each month|monthly|calendar month", t):
+        return "Monthly"
+    if re.search(r"semi-?annual|six[- ]month|fiscal half", t):
+        return "Semi-annual"
+    if re.search(r"fiscal quarter|quarterly|quarter end|each quarter|four quarter", t):
+        return "Quarterly"
+    if re.search(r"fiscal year|annual|each year end", t):
+        return "Annual"
+    return "Not stated in quote"
+
+
 def level_text(c):
     """'3.75x' when the level is a number, otherwise whatever the model wrote."""
     if c.get("level_is_number"):
@@ -290,6 +306,7 @@ with tab_main:
                     "Type": (c.get("kind") or "").capitalize(),
                     "Level": level_text(c),
                     "First test date": c.get("first_test_date") or "—",
+                    "Tested": test_frequency(c),
                     "Section": c.get("section"),
                     "Quote checked": "✓" if c["quote_found"] else "✗ not found in text",
                 } for c in covs]
@@ -308,6 +325,7 @@ with tab_main:
                         tags = [tag(kind_label), tag(level_text(c))]
                         if c.get("first_test_date"):
                             tags.append(tag(f'First test {c["first_test_date"]}'))
+                        tags.append(tag(f'Tested: {test_frequency(c)}'))
                         if c["quote_found"]:
                             tags.append(tag("Quote found in text", "ok"))
                         else:
@@ -337,6 +355,12 @@ with tab_main:
                                                           f'({(covs[i].get("kind") or "").lower()} '
                                                           f'{covs[i]["level"]:.2f}x)')
                 c = covs[pick]
+                if c.get("schedule"):
+                    st.warning(f'This covenant changes over time. The test below uses '
+                               f'{float(c["level"]):.2f}x, the level at the first test date '
+                               f'({c.get("first_test_date") or "?"}). Schedule: {c["schedule"]} '
+                               f'Check which level applies on the date being tested.')
+                st.caption(f"Tested: {test_frequency(c)}")
                 test_key = f'test::{st.session_state.get("ticker")}::{c.get("name")}'
                 if st.button("Test against latest filing"):
                     if st.session_state["request_count"] >= MAX_REQUESTS:
