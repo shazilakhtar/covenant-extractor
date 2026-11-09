@@ -478,46 +478,60 @@ with tab_main:
     st.write("")
     with st.container(border=True):
         st.subheader("Headroom")
-        st.caption("Optional. How far is the company from breaking its maximum leverage covenant?")
+        st.caption("Optional. How far is the company from breaking its covenant? Change any number "
+                   "to test a what-if.")
 
-        default_limit = 3.75
+        # Shazil: leverage (a maximum) or interest coverage (a minimum); calculate_headroom handles both
+        mode = st.radio("Covenant type", ["Leverage (maximum)", "Interest coverage (minimum)"],
+                        horizontal=True, label_visibility="collapsed")
+        is_cov = mode.startswith("Interest")
+        metric_wanted = "interest_coverage" if is_cov else "leverage"
+
+        default_limit = 3.00 if is_cov else 3.75
         if result and result.get("status") == "ok":   # Shazil: prefill with the extracted limit
-            lev = [c for c in result["data"]["covenants"]
-                   if c.get("metric") == "leverage" and c.get("level_is_number")]
-            if lev:
-                default_limit = float(lev[0]["level"])
+            match = [c for c in result["data"]["covenants"]
+                     if c.get("metric") == metric_wanted and c.get("level_is_number")]
+            if match:
+                default_limit = float(match[0]["level"])
 
-        # Shazil: prefill debt and EBITDA from the financial statements when they were calculated
-        default_debt, default_ebitda = 750.0, 250.0
+        # Shazil: prefill from the financial statements when they were calculated
+        default_a, default_b = (250.0, 50.0) if is_cov else (750.0, 250.0)
         fs_now = st.session_state.get(f'fs::{st.session_state.get("ticker")}')
-        from_statements = bool(fs_now and fs_now.get("status") == "ok")
+        from_statements = bool(fs_now and fs_now.get("status") == "ok"
+                               and (not is_cov or fs_now.get("interest")))
         if from_statements:
-            default_debt = round(fs_now["total_debt"] / 1e6, 1)
-            default_ebitda = round(fs_now["ebitda"] / 1e6, 1)
+            if is_cov:
+                default_a = round(fs_now["ebitda"] / 1e6, 1)
+                default_b = round(fs_now["interest"] / 1e6, 1)
+            else:
+                default_a = round(fs_now["total_debt"] / 1e6, 1)
+                default_b = round(fs_now["ebitda"] / 1e6, 1)
             st.caption(f'Pre-filled from the financial statements as of {fs_now["as_of"]} '
-                       f'(reported EBITDA, last twelve months). Change any number to test a what-if, '
-                       f'for example add-backs or a drop in EBITDA.')
-        # the key changes with the company, so new numbers replace the old ones
-        k = f'{st.session_state.get("ticker", "")}_{from_statements}_{default_limit}'
+                       f'(reported figures, last twelve months).')
+        # the key changes with the company and the mode, so new numbers replace the old ones
+        k = f'{st.session_state.get("ticker", "")}_{from_statements}_{default_limit}_{metric_wanted}'
 
+        label_a, label_b = ("EBITDA ($M)", "Interest expense ($M)") if is_cov else ("Debt ($M)", "EBITDA ($M)")
         in1, in2, in3 = st.columns(3)
-        debt = in1.number_input("Debt ($M)", min_value=0.0, value=default_debt, step=10.0,
-                                key=f"debt_{k}")
-        ebitda = in2.number_input("EBITDA ($M)", min_value=0.0, value=default_ebitda, step=10.0,
-                                  key=f"ebitda_{k}")
-        limit = in3.number_input("Leverage limit (x)", min_value=0.0, value=default_limit,
-                                 step=0.25, key=f"limit_{k}")
+        num_a = in1.number_input(label_a, min_value=0.0, value=default_a, step=10.0, key=f"a_{k}")
+        num_b = in2.number_input(label_b, min_value=0.0, value=default_b, step=5.0 if is_cov else 10.0,
+                                 key=f"b_{k}")
+        limit = in3.number_input("Minimum coverage (x)" if is_cov else "Leverage limit (x)",
+                                 min_value=0.0, value=default_limit, step=0.25, key=f"limit_{k}")
 
         if st.button("Calculate headroom"):
             try:
-                h = calculate_headroom("maximum", limit, debt, ebitda)
+                # leverage: debt / EBITDA vs a maximum; coverage: EBITDA / interest vs a minimum
+                h = calculate_headroom("minimum" if is_cov else "maximum", limit, num_a, num_b)
                 if "error" in h:
                     st.error(h["error"])
                 else:
                     col1, col2, col3 = st.columns(3)
-                    col1.metric("Actual leverage", f"{h['actual_ratio']}x")
+                    col1.metric("Actual coverage" if is_cov else "Actual leverage", f"{h['actual_ratio']}x")
                     col2.metric("Headroom", f"{h['headroom_pct']}%")
-                    col3.metric("EBITDA cushion", f"{h['ebitda_cushion_pct']}%")
+                    col3.metric("EBITDA cushion",
+                                f"{h['ebitda_cushion_pct']}%" if h["ebitda_cushion_pct"] is not None else "—",
+                                help="How far EBITDA can fall before the covenant is broken.")
                     if h["in_compliance"]:
                         st.success("In compliance with the covenant.")
                     else:
