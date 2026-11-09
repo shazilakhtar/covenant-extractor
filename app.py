@@ -463,11 +463,26 @@ with tab_main:
             if lev:
                 default_limit = float(lev[0]["level"])
 
+        # Shazil: prefill debt and EBITDA from the financial statements when they were calculated
+        default_debt, default_ebitda = 750.0, 250.0
+        fs_now = st.session_state.get(f'fs::{st.session_state.get("ticker")}')
+        from_statements = bool(fs_now and fs_now.get("status") == "ok")
+        if from_statements:
+            default_debt = round(fs_now["total_debt"] / 1e6, 1)
+            default_ebitda = round(fs_now["ebitda"] / 1e6, 1)
+            st.caption(f'Pre-filled from the financial statements as of {fs_now["as_of"]} '
+                       f'(reported EBITDA, last twelve months). Change any number to test a what-if, '
+                       f'for example add-backs or a drop in EBITDA.')
+        # the key changes with the company, so new numbers replace the old ones
+        k = f'{st.session_state.get("ticker", "")}_{from_statements}_{default_limit}'
+
         in1, in2, in3 = st.columns(3)
-        debt = in1.number_input("Debt ($M)", min_value=0.0, value=750.0, step=10.0)
-        ebitda = in2.number_input("EBITDA ($M)", min_value=0.0, value=250.0, step=10.0)
+        debt = in1.number_input("Debt ($M)", min_value=0.0, value=default_debt, step=10.0,
+                                key=f"debt_{k}")
+        ebitda = in2.number_input("EBITDA ($M)", min_value=0.0, value=default_ebitda, step=10.0,
+                                  key=f"ebitda_{k}")
         limit = in3.number_input("Leverage limit (x)", min_value=0.0, value=default_limit,
-                                 step=0.25)
+                                 step=0.25, key=f"limit_{k}")
 
         if st.button("Calculate headroom"):
             try:
