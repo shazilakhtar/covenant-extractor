@@ -111,6 +111,13 @@ def cached_document(url):
     return load_document(url)
 
 
+def cached_disclosed_ratio(cik, covenant_name):
+    """Not cached on purpose: a failed try must not be remembered. The result is kept in
+    session_state, and disclosed_ratio saves the filing on disk."""
+    from disclosed_ratio import find_disclosed_ratio
+    return find_disclosed_ratio(cik, covenant_name)
+
+
 class TemporaryFailure(Exception):
     """Raised so a failed model call is NOT cached and the user can simply retry."""
     def __init__(self, result):
@@ -147,7 +154,7 @@ def run_search(ticker, choice=None):
             result = cached_extraction(url, EXTRACT_PROMPT_VERSION)
         except TemporaryFailure as e:
             result = e.result
-    st.session_state.update(company=company, filings=filings, choice=idx,
+    st.session_state.update(company=company, filings=filings, choice=idx, ticker=ticker,
                             result=result, error=None, error_detail=None)
 
 
@@ -219,8 +226,37 @@ with tab_main:
                 "Link": x.get("url"),
             } for i, x in enumerate(filings)]), hide_index=True, use_container_width=True,
                 column_config={"Link": st.column_config.LinkColumn("Link", display_text="Open")})
-            st.caption("The app reads the newest full agreement. To read another one, "
-                       "use \"Use a different agreement\" at the bottom.")
+            st.caption("The app reads the newest full agreement by default. Pick another one below.")
+
+            def label(i):
+                x = filings[i]
+                kind = "Amendment" if x.get("is_amendment") else "Agreement"
+                return f'{x.get("date")} · {kind} · {(x.get("description") or x.get("exhibit"))[:80]}'
+
+            col_pick, col_go = st.columns([4, 1])
+            with col_pick:
+                chosen = st.selectbox("Agreement to read", range(len(filings)), index=idx,
+                                      format_func=label, label_visibility="collapsed",
+                                      key=f'pick_{st.session_state.get("ticker", "")}')
+            with col_go:
+                read_clicked = st.button("Read this one", use_container_width=True)
+            if read_clicked:
+                if chosen == idx:
+                    st.info("That agreement is already shown below.")
+                elif st.session_state["request_count"] >= MAX_REQUESTS:
+                    st.warning("Search limit reached for this session.")
+                else:
+                    st.session_state["request_count"] += 1
+                    ok = True
+                    try:
+                        run_search(st.session_state["ticker"], chosen)
+                    except Exception as e:
+                        ok = False
+                        st.error("Could not read that agreement. Please try again.")
+                        with st.expander("Technical details"):
+                            st.code(str(e))
+                    if ok:
+                        st.rerun()       # outside the try, so the reload is never swallowed
 
         # --- Shazil: show the model's result, or a clear message when it failed ---
         if result["status"] == "api_error" and "per day" in result.get("error", "").lower():
@@ -283,20 +319,135 @@ with tab_main:
                         if c.get("condition"):
                             st.write("**Applies only when:**", c["condition"])
 
-        with st.expander("Use a different agreement"):
-            new = st.selectbox("Filing", range(len(filings)), index=idx,
-                               format_func=lambda i: f'{filings[i]["date"]} — '
-                                                     f'{filings[i]["description"][:80]}')
-            if st.button("Read this one") and new != idx:
-                if st.session_state["request_count"] >= MAX_REQUESTS:
-                    st.warning("Search limit reached for this session.")
-                else:
-                    st.session_state["request_count"] += 1
-                    try:
-                        run_search(ticker or st.session_state["company"]["name"], new)
-                        st.rerun()
-                    except Exception:
-                        st.error("Could not read that agreement. Please try again.")
+    # ---------------- Covenant test (Adwoa's disclosed_ratio + Norbesida's headroom_from_ratio) ----
+    # Wiring: Shazil. Compares the limit the app extracted with the ratio the company itself
+    # reports in its latest 10-Q / 10-K. Runs only when the user clicks, so it never slows the search.
+    res = st.session_state.get("result")
+    if (res and res.get("status") == "ok" and not st.session_state.get("error")
+            and res["data"].get("covenants")):
+        covs = [c for c in res["data"]["covenants"] if c.get("level_is_number")]
+        if covs:
+            st.write("")
+            with st.container(border=True):
+                st.subheader("Covenant test")
+                st.caption("Does the company pass? Compares the limit above with the actual ratio "
+                           "the company reports in its latest 10-Q or 10-K.")
+                pick = st.selectbox("Covenant to test", range(len(covs)),
+                                    format_func=lambda i: f'{covs[i].get("name")} '
+                                                          f'({(covs[i].get("kind") or "").lower()} '
+                                                          f'{covs[i]["level"]:.2f}x)')
+                c = covs[pick]
+                test_key = f'test::{st.session_state.get("ticker")}::{c.get("name")}'
+                if st.button("Test against latest filing"):
+                    if st.session_state["request_count"] >= MAX_REQUESTS:
+                        st.warning("Search limit reached for this session.")
+                    else:
+                        st.session_state["request_count"] += 1
+                        with st.spinner("Reading the latest 10-Q / 10-K..."):
+                            st.session_state[test_key] = cached_disclosed_ratio(
+                                st.session_state["company"]["cik"], c.get("name"))
+                t = st.session_state.get(test_key)
+                if t:
+                    if t["status"] == "found":
+                        from headroom import headroom_from_ratio
+                        kind = "minimum" if (c.get("kind") or "").lower() == "minimum" else "maximum"
+                        h = headroom_from_ratio(kind, float(c["level"]), float(t["value"]))
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("Reported ratio", f'{t["value"]:.2f}x',
+                                  help=f'As of {t.get("as_of") or "?"}')
+                        m2.metric("Covenant limit", f'{float(c["level"]):.2f}x')
+                        m3.metric("Headroom", f'{h["headroom_pct"]}%' if "error" not in h else "—")
+                        if "error" in h:
+                            st.error(h["error"])
+                        elif h["in_compliance"]:
+                            st.success("Passes the covenant.")
+                        else:
+                            st.error("Fails the covenant.")
+                        st.markdown(f'> {t.get("quote")}')
+                        st.caption(("Quote found in the filing. " if t.get("quote_found")
+                                    else "Quote NOT found in the filing text, check manually. ")
+                                   + f'Source: [{t.get("filing_form")} filed {t.get("filing_date")}]'
+                                     f'({t.get("filing_url")}). If the limit steps down over time, '
+                                     f'check the schedule for the level at that date.')
+                    elif t["status"] == "not_disclosed":
+                        st.info(f'The latest {t.get("filing_form") or "filing"} does not state an '
+                                f'actual ratio (companies often only say they are "in compliance"). '
+                                f'Use the headroom calculator below with your own numbers.')
+                    else:
+                        st.error("Could not run the test. Please try again in a minute.")
+                        with st.expander("Technical details"):
+                            st.code(t.get("error") or "")
+
+                # --- Shazil: same test, calculated from the financial statements (XBRL, no Gemini) ---
+                st.divider()
+                st.markdown("**Or calculate it from the financial statements**")
+                st.caption("Debt, cash and last-twelve-months EBITDA from the company's own 10-Q / 10-K "
+                           "numbers (SEC XBRL data). Demo: checked for Hasbro (HAS).")
+                fs_key = f'fs::{st.session_state.get("ticker")}'
+                if st.button("Calculate from financial statements"):
+                    from financials import leverage_from_statements
+                    with st.spinner("Reading the financial statements..."):
+                        st.session_state[fs_key] = leverage_from_statements(
+                            st.session_state["company"]["cik"])
+                fs = st.session_state.get(fs_key)
+                if fs:
+                    if fs["status"] != "ok":
+                        st.warning("Could not calculate it from the statements: " + (fs["error"] or ""))
+                    elif c.get("metric") in ("interest_coverage", "fixed_charge_coverage"):
+                        from headroom import headroom_from_ratio
+                        if not fs.get("interest_coverage"):
+                            st.warning("Interest expense was not found for the same period, so "
+                                       "coverage cannot be calculated from the statements.")
+                        else:
+                            cov = fs["interest_coverage"]
+                            h3 = headroom_from_ratio("minimum", float(c["level"]), round(cov, 2))
+                            g1, g2, g3, g4 = st.columns(4)
+                            g1.metric("EBITDA (LTM)", f'${fs["ebitda"] / 1e6:,.0f}M')
+                            g2.metric("Interest (LTM)", f'${fs["interest"] / 1e6:,.0f}M')
+                            g3.metric("Interest coverage", f"{cov:.2f}x")
+                            g4.metric("Headroom", f'{h3["headroom_pct"]}%' if "error" not in h3 else "—")
+                            if "error" in h3:
+                                st.error(h3["error"])
+                            elif h3["in_compliance"]:
+                                st.success(f'Above the {float(c["level"]):.2f}x minimum as of {fs["as_of"]}.')
+                            else:
+                                st.error(f'Below the {float(c["level"]):.2f}x minimum as of {fs["as_of"]}.')
+                            if c.get("metric") == "fixed_charge_coverage":
+                                st.caption("Approximation: uses interest only. Fixed charges in the "
+                                           "agreement usually also include other items.")
+                            with st.expander("Numbers used"):
+                                st.dataframe(pd.DataFrame([{
+                                    "Item": i["item"], "$M": round(i["value"] / 1e6, 1),
+                                    "As of": i["as_of"], "Source (XBRL tag)": i["source"]}
+                                    for i in fs["inputs"]]), hide_index=True, use_container_width=True)
+                    elif c.get("metric") != "leverage":
+                        st.info("This calculation covers leverage and interest coverage covenants. "
+                                "Pick one of those above.")
+                    else:
+                        from headroom import headroom_from_ratio
+                        is_net = "net" in (c.get("name") or "").lower()
+                        ratio = fs["net_leverage"] if is_net else fs["total_leverage"]
+                        h2 = headroom_from_ratio("maximum", float(c["level"]), round(ratio, 2))
+                        f1, f2, f3, f4 = st.columns(4)
+                        f1.metric("Debt" + (" less cash" if is_net else ""),
+                                  f'${(fs["total_debt"] - (fs["cash"] if is_net else 0)) / 1e6:,.0f}M')
+                        f2.metric("EBITDA (LTM)", f'${fs["ebitda"] / 1e6:,.0f}M')
+                        f3.metric(("Net" if is_net else "Total") + " leverage", f"{ratio:.2f}x")
+                        f4.metric("Headroom", f'{h2["headroom_pct"]}%' if "error" not in h2 else "—")
+                        if "error" in h2:
+                            st.error(h2["error"])
+                        elif h2["in_compliance"]:
+                            st.success(f'Below the {float(c["level"]):.2f}x limit as of {fs["as_of"]}.')
+                        else:
+                            st.error(f'Above the {float(c["level"]):.2f}x limit as of {fs["as_of"]}.')
+                        with st.expander("Numbers used"):
+                            st.dataframe(pd.DataFrame([{
+                                "Item": i["item"], "$M": round(i["value"] / 1e6, 1),
+                                "As of": i["as_of"], "Source (XBRL tag)": i["source"]}
+                                for i in fs["inputs"]]), hide_index=True, use_container_width=True)
+                        st.caption("Rough check: this uses REPORTED EBITDA. The agreement's own "
+                                   "\"Consolidated EBITDA\" usually adds back more items, so the real "
+                                   "covenant ratio is normally lower than this.")
 
     # ---------------- Headroom (Norbesida) ----------------
     st.write("")
