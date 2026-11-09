@@ -20,7 +20,8 @@ from edgar import HEADERS, find_company
 FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 
 # Several possible tags for each number: companies choose different ones. First found wins.
-DEBT_TOTAL = ["LongTermDebt", "DebtInstrumentCarryingAmount"]          # incl. current part
+DEBT_TOTAL = ["LongTermDebt", "LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities",
+              "DebtAndCapitalLeaseObligations", "DebtInstrumentCarryingAmount"]   # incl. current part
 DEBT_PARTS = ["LongTermDebtNoncurrent", "LongTermDebtCurrent"]          # if no total tag
 SHORT_TERM = ["ShortTermBorrowings", "CommercialPaper"]
 CASH = ["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]

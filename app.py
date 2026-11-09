@@ -372,7 +372,8 @@ with tab_main:
                     elif t["status"] == "not_disclosed":
                         st.info(f'The latest {t.get("filing_form") or "filing"} does not state an '
                                 f'actual ratio (companies often only say they are "in compliance"). '
-                                f'Use the headroom calculator below with your own numbers.')
+                                f'Use "Calculate from financial statements" just below to work it out '
+                                f'from the company\'s own numbers.')
                     else:
                         st.error("Could not run the test. Please try again in a minute.")
                         with st.expander("Technical details"):
