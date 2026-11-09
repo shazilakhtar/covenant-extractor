@@ -319,6 +319,12 @@ with tab_main:
                     })
 
                 st.markdown("##### Supporting text")
+                # Shazil: the agreement's own definitions (the same dictionary Gemini's tool uses)
+                try:
+                    defs = cached_document(f["url"])[3]
+                except Exception:
+                    defs = {}
+                from definitions import lookup_definition
                 for c in covs:
                     with st.expander(f'Section {c.get("section")}: {c.get("name")}'):
                         kind_label = (c.get("kind") or "").capitalize() or "Covenant"
@@ -336,6 +342,36 @@ with tab_main:
                             st.write("**Schedule:**", c["schedule"])
                         if c.get("condition"):
                             st.write("**Applies only when:**", c["condition"])
+
+                        # Show what the ratio means, and how EBITDA is defined in THIS agreement
+                        d = lookup_definition(c.get("name") or "", defs)
+                        if not d["found"]:
+                            # closest defined term that contains every word of the name
+                            # (e.g. "Total Leverage Ratio" -> "Net Total Leverage Ratio")
+                            words = set((c.get("name") or "").lower().split())
+                            close = sorted((t for t in defs if words and words <= set(t.lower().split())),
+                                           key=len)
+                            if close:
+                                d = lookup_definition(close[0], defs)
+                        shown = []
+                        if d["found"]:
+                            shown.append((d["term"], d["definition"]))
+                            for t in d["uses_terms"]:
+                                if "EBITDA" in t and len(shown) < 3:
+                                    shown.append((t, defs[t]))
+                        if not any("EBITDA" in t for t, _ in shown) and "Consolidated EBITDA" in defs:
+                            shown.append(("Consolidated EBITDA", defs["Consolidated EBITDA"]))
+                        if shown:
+                            st.markdown("**Definitions in this agreement** "
+                                        "(the text Gemini can look up with its tool)")
+                            for term, text in shown:
+                                st.caption(f'"{term}"')
+                                st.text_area(term, text, height=160, disabled=True,
+                                             label_visibility="collapsed",
+                                             key=f'def_{st.session_state.get("ticker")}_{c.get("name")}_{term}')
+                        else:
+                            st.caption("The definitions are not in this document "
+                                       "(amendments often refer back to the original agreement).")
 
     # ---------------- Covenant test (Adwoa's disclosed_ratio + Norbesida's headroom_from_ratio) ----
     # Wiring: Shazil. Compares the limit the app extracted with the ratio the company itself
