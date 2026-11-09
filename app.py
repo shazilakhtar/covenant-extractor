@@ -180,7 +180,7 @@ tab_main, tab_how = st.tabs(["Covenants", "How it works"])
 with tab_main:
     col_input, col_button = st.columns([4, 1])
     with col_input:
-        ticker = st.text_input("Ticker", placeholder="Ticker, for example HAS",
+        ticker = st.text_input("Ticker", placeholder="Ticker, for example AAPL",
                                label_visibility="collapsed").strip().upper()
     with col_button:
         find_clicked = st.button("Find covenants", type="primary", use_container_width=True)
@@ -407,7 +407,8 @@ with tab_main:
                 st.divider()
                 st.markdown("**Or calculate it from the financial statements**")
                 st.caption("Debt, cash and last-twelve-months EBITDA from the company's own 10-Q / 10-K "
-                           "numbers (SEC XBRL data). Demo: checked for Hasbro (HAS).")
+                           "numbers (SEC XBRL data). Checked on Hasbro, Mattel and Casella; other companies may "
+                           "label their numbers differently.")
                 fs_key = f'fs::{st.session_state.get("ticker")}'
                 if st.button("Calculate from financial statements"):
                     from financials import leverage_from_statements
@@ -478,7 +479,7 @@ with tab_main:
     st.write("")
     with st.container(border=True):
         st.subheader("Headroom")
-        st.caption("Optional. How far is the company from breaking its covenant? Change any number "
+        st.caption("How far is the company from breaking its covenant? Change any number "
                    "to test a what-if.")
 
         # Shazil: leverage (a maximum) or interest coverage (a minimum); calculate_headroom handles both
@@ -506,7 +507,7 @@ with tab_main:
             else:
                 default_a = round(fs_now["total_debt"] / 1e6, 1)
                 default_b = round(fs_now["ebitda"] / 1e6, 1)
-            st.caption(f'Pre-filled from the financial statements as of {fs_now["as_of"]} '
+            st.caption(f'Numbers taken from the company\'s financial statements as of {fs_now["as_of"]} '
                        f'(reported figures, last twelve months).')
         # the key changes with the company and the mode, so new numbers replace the old ones
         k = f'{st.session_state.get("ticker", "")}_{from_statements}_{default_limit}_{metric_wanted}'
