@@ -94,3 +94,9 @@ Choosing the agreement is currently a simple rule in code (`pipeline.pick_agreem
 - For Hasbro and Mattel the excerpts contained covenant LIMITS (3.75, 4.00); the "a limit is not an actual value" rule stopped Gemini from reporting them.
 - Hidden XBRL code lines matched keywords; we skip lines with web addresses or 40+ character tokens.
 - Note for Shazil: the app picked a 2011 agreement for MAT and found no covenants, but Mattel's current 10-Q describes a Credit Agreement with 2.75 interest coverage and 3.75 / 4.00 leverage covenants.
+
+### Rerun of v2 + fix (Nov 13)
+- The Nov 7 file `results_extract-v2_20261107_1650.csv` was overwritten by a second run in the same minute that hit the rate limit (all rows api_error). The original console output is kept in `eval/console_v2_fix_20261107_1650.txt` (16/21 = 76%).
+- Rerun on Nov 13: `eval/results_extract-v2_20261113_154315.csv`: 16/21 on both runs (76%), same answer on both runs 86%, quotes verified 100%, 1.8 ± 0.7 requests, 10.3K ± 4.3K tokens in per agreement.
+- `run_eval.py` now adds seconds to result file names so this cannot happen again.
+- Spread (mean ± std dev over 19 agreements × 2 runs) and the box plot: `report/tokens_boxplot.png`.
