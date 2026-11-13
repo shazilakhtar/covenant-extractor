@@ -204,7 +204,7 @@ def main():
     if secs:
         print(f"Seconds per agreement (model call, agreement already cached): median {secs[len(secs)//2]:.1f}, max {secs[-1]:.1f}")
 
-    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     path = os.path.join(HERE, f"results_{version}_{stamp}.csv")
     with open(path, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(records[0].keys()) + (["consistent"] if "consistent" not in records[0] else []))

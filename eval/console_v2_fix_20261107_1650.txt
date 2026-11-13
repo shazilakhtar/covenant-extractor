@@ -1,0 +1,114 @@
+PS C:\covenant-extractor> py eval/run_eval.py --prompt v2
+21 coded rows, prompt extract-v2, 2 run(s) each
+
+row   1 HAS    run 1: CORRECT level 3.75   section 7.05(b)  quote False 
+  Gemini busy (503), retrying in 10 seconds...
+row   1 HAS    run 2: CORRECT level 3.75   section 7.05(b)  quote True  
+row   2 AAPL   run 1: CORRECT level        section          quote       
+row   2 AAPL   run 2: CORRECT level        section          quote       
+row   3 ZZZZ   run 1: CORRECT level        section          quote       
+row   3 ZZZZ   run 2: CORRECT level        section          quote       
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\63276_000162828024031973_mattel-creditagreement2024.kw.npy
+row   4 MAT    run 1: wrong   level 3.75   section 7.05(b)  quote True  
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\63276_000162828024031973_mattel-creditagreement2024.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+  Gemini busy (503), retrying in 40 seconds...
+row   4 MAT    run 2: wrong   level 3.75   section 7.05(b)  quote False 
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\1799332_000149315223012845_ex10-1.kw.npy
+row   5 GAN    run 1: wrong   level 10000000.0 section 1.01(c)  quote True  
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\1799332_000149315223012845_ex10-1.kw.npy
+row   5 GAN    run 2: wrong   level 10000000 section 1.01(c)  quote True  
+Loaded 34 vectors from cache: C:\covenant-extractor\eval\cache\1777921_000143774923030336_ex_591109.kw.npy
+row   6 AVPT   run 1: CORRECT level 2.5    section 6.7(a)   quote True  
+Loaded 34 vectors from cache: C:\covenant-extractor\eval\cache\1777921_000143774923030336_ex_591109.kw.npy
+row   6 AVPT   run 2: CORRECT level 2.5    section 6.7(a)   quote True  
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\1830188_000183018825000012_ex-1023xcreditagreement.kw.npy
+row   7 UHG    run 1: CORRECT level 2.5    section 7.1(b)   quote True  
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\1830188_000183018825000012_ex-1023xcreditagreement.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row   7 UHG    run 2: CORRECT level 2.5    section 7.1(b)   quote True  
+Loaded 111 vectors from cache: C:\covenant-extractor\eval\cache\1290900_000162828026016520_exhibit1036q42025.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+  Gemini busy (503), retrying in 10 seconds...
+row   8 CVGI   run 1: wrong   level 6.5    section 10.3.1   quote True  
+Loaded 111 vectors from cache: C:\covenant-extractor\eval\cache\1290900_000162828026016520_exhibit1036q42025.kw.npy
+row   8 CVGI   run 2: wrong   level 6.5    section 10.3.1   quote True  
+Loaded 68 vectors from cache: C:\covenant-extractor\eval\cache\1780201_000155837024010190_tmb-20240722xex10d1.kw.npy
+row   9 LVLU   run 1: CORRECT level 2.0    section 7.16(a)  quote True  
+Loaded 68 vectors from cache: C:\covenant-extractor\eval\cache\1780201_000155837024010190_tmb-20240722xex10d1.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row   9 LVLU   run 2: CORRECT level 2.0    section 7.16(a)  quote True  
+Loaded 83 vectors from cache: C:\covenant-extractor\eval\cache\1888447_000095017025067156_ee-ex10_3.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row  10 EE     run 1: CORRECT level 3.5    section 6.10(a)  quote True  
+Loaded 83 vectors from cache: C:\covenant-extractor\eval\cache\1888447_000095017025067156_ee-ex10_3.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+row  10 EE     run 2: CORRECT level 3.5    section 6.10(a)  quote True  
+Loaded 95 vectors from cache: C:\covenant-extractor\eval\cache\911177_000119312523181016_d524927dex101.kw.npy
+row  11 CWST   run 1: CORRECT level 4.0    section 7.11(b)  quote True  
+Loaded 95 vectors from cache: C:\covenant-extractor\eval\cache\911177_000119312523181016_d524927dex101.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row  11 CWST   run 2: CORRECT level 4.0    section 7.11(b)  quote True  
+Loaded 72 vectors from cache: C:\covenant-extractor\eval\cache\1142750_000095014225002687_eh250686864_ex1001.kw.npy
+row  12 AMN    run 1: wrong   level 4.75   section 8.18(a)  quote True  
+Loaded 72 vectors from cache: C:\covenant-extractor\eval\cache\1142750_000095014225002687_eh250686864_ex1001.kw.npy
+row  12 AMN    run 2: wrong   level 5.5    section 8.18(a)  quote True  
+Loaded 136 vectors from cache: C:\covenant-extractor\eval\cache\1530804_000114036124049849_ef20040331_ex10-1.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+  Gemini busy (503), retrying in 10 seconds...
+row  13 TROX   run 1: CORRECT level 4.75   section 6.12(a)  quote True  
+Loaded 136 vectors from cache: C:\covenant-extractor\eval\cache\1530804_000114036124049849_ef20040331_ex10-1.kw.npy
+row  13 TROX   run 2: CORRECT level 4.75   section 6.12(a)  quote True  
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\95574_000143774923013023_ex_512273.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+row  14 SGC    run 1: wrong   level 4.0    section 9.14     quote True  
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\95574_000143774923013023_ex_512273.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row  14 SGC    run 2: wrong   level 4.0    section 9.14     quote True  
+Loaded 5 vectors from cache: C:\covenant-extractor\eval\cache\1342423_000110465925121572_tm2533597d1_ex10-1.kw.npy
+row  15 LMNR   run 1: CORRECT level 4.5    section 8.1.2    quote True  
+Loaded 5 vectors from cache: C:\covenant-extractor\eval\cache\1342423_000110465925121572_tm2533597d1_ex10-1.kw.npy
+row  15 LMNR   run 2: CORRECT level 4.5    section 8.1.2    quote True  
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\1826600_000119312526006546_d19493dex10147.kw.npy
+row  16 MNTK   run 1: CORRECT level 3.5    section 7.9(b)   quote True  
+Loaded 6 vectors from cache: C:\covenant-extractor\eval\cache\1826600_000119312526006546_d19493dex10147.kw.npy
+row  16 MNTK   run 2: CORRECT level 3.5    section 7.9(b)   quote True  
+Loaded 77 vectors from cache: C:\covenant-extractor\eval\cache\1856031_000119312526331507_seat-ex10_2.kw.npy
+row  17 SEAT   run 1: CORRECT level 4.0    section 6.11     quote True  
+Loaded 77 vectors from cache: C:\covenant-extractor\eval\cache\1856031_000119312526331507_seat-ex10_2.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+row  17 SEAT   run 2: CORRECT level 4.0    section 6.11     quote True  
+Loaded 75 vectors from cache: C:\covenant-extractor\eval\cache\1687932_000095014223001005_eh230346263_ex1001.kw.npy
+  Gemini busy (503), retrying in 10 seconds...
+  Gemini busy (503), retrying in 20 seconds...
+row  18 JILL   run 1: CORRECT level 3.0    section 9.11     quote True  
+Loaded 75 vectors from cache: C:\covenant-extractor\eval\cache\1687932_000095014223001005_eh230346263_ex1001.kw.npy
+row  18 JILL   run 2: CORRECT level 3.0    section 9.11     quote True  
+Loaded 4 vectors from cache: C:\covenant-extractor\eval\cache\1772921_000177292124000046_onew-2024630xexx101.kw.npy
+row  19 ONEW   run 1: CORRECT level 3.0    section 7(e)(i)  quote True  
+Loaded 4 vectors from cache: C:\covenant-extractor\eval\cache\1772921_000177292124000046_onew-2024630xexx101.kw.npy
+row  19 ONEW   run 2: CORRECT level 3.0    section 7(e)(i)  quote True  
+Loaded 3 vectors from cache: C:\covenant-extractor\eval\cache\1015383_000164117225005369_ex10-1.kw.npy
+row  20 POWW   run 1: CORRECT level 1.1    section 6.8(a)   quote True  
+Loaded 3 vectors from cache: C:\covenant-extractor\eval\cache\1015383_000164117225005369_ex10-1.kw.npy
+row  20 POWW   run 2: CORRECT level 1.1    section 6.8(a)   quote True  
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\1326801_000119312512101422_d287954dex1014.kw.npy
+row  21 META   run 1: CORRECT level        section          quote       
+Loaded 47 vectors from cache: C:\covenant-extractor\eval\cache\1326801_000119312512101422_d287954dex1014.kw.npy
+row  21 META   run 2: CORRECT level        section          quote       
+
+========== RESULT ==========
+Prompt extract-v2 | model from secrets | 21 agreements
+METRIC (run 1): 16/21 correct = 76%
+Same answer on both runs: 95%
+Quotes verified word for word: 94%
+Per agreement: 1.9 Gemini requests, 11,145 tokens in, 482 out
+Saved every run to C:\covenant-extractor\eval\results_extract-v2_20261107_1650.csv
+PS C:\covenant-extractor> 
