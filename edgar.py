@@ -50,8 +50,7 @@ def search_credit_agreements(cik, max_results=10):
 
 
 def list_credit_agreements(cik, years=6, pages=3, max_results=25):
-    """Newer version of search_credit_agreements (test first with
-    eval/list_agreements.py). Two fixes:
+    """The agreement search the app uses (replaced search_credit_agreements). Two fixes:
       1. asks EDGAR only for the last `years` years, so old filings do not crowd out new ones
       2. reads up to `pages` pages of results (100 hits each), not just the first page
     Returns the same shape as search_credit_agreements, newest first, plus "is_amendment"."""

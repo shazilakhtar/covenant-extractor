@@ -118,7 +118,15 @@ def cached_filings(ticker):
     if company is None:
         return None, []
     # last 6 years, several result pages, real titles read from each cover page
-    return company, add_titles(list_credit_agreements(company["cik"]))
+    filings = add_titles(list_credit_agreements(company["cik"]))
+    from pipeline import is_full_agreement
+    if filings and not any(is_full_agreement(f) for f in filings):
+        # only amendments in the last 6 years: look further back for the full agreement itself
+        older = add_titles(list_credit_agreements(company["cik"], years=20, pages=5, max_results=60))
+        seen = {f["url"] for f in filings}
+        filings += [f for f in older if is_full_agreement(f) and f["url"] not in seen]
+        filings.sort(key=lambda f: f["date"] or "", reverse=True)
+    return company, filings
 
 
 @st.cache_resource(show_spinner=False)
@@ -229,6 +237,11 @@ with tab_main:
             f'<div class="meta">Filed {filed_on}. '
             f'<a href="{agreement_link}" target="_blank">Open on EDGAR</a></div></div>',
             unsafe_allow_html=True)
+        from pipeline import is_full_agreement
+        if not is_full_agreement(f):
+            st.warning("This document is an amendment (or its title could not be read), not the full "
+                       "credit agreement. An amendment usually changes only a few sections, so the "
+                       "covenants may not be in it. Pick the full agreement in the list below if there is one.")
 
         # --- Shazil: every credit agreement and amendment found on EDGAR, newest first ---
         with st.expander(f"All credit agreements found on EDGAR ({len(filings)})", expanded=True):

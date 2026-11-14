@@ -36,6 +36,12 @@ NOT_FULL = re.compile(r"\b(AMENDMENT|INCREASE|JOINDER|WAIVER|SUPPLEMENT|CONSENT)
 FULL_TITLE = re.compile(r"CREDIT AGREEMENT|LOAN (AND SECURITY )?AGREEMENT|FINANCING AGREEMENT", re.I)
 
 
+def is_full_agreement(filing):
+    """True when the title says it is a whole credit/loan/financing agreement, not an amendment."""
+    d = (filing.get("description") or "").upper()
+    return bool(FULL_TITLE.search(d)) and not NOT_FULL.search(d)
+
+
 def pick_agreement(filings):
     """Default choice: the newest filing that is a full credit agreement, not an amendment.
     (A simple rule for now; the user can pick another one on screen.)"""
